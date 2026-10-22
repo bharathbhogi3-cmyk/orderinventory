@@ -20,11 +20,10 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = true, unique = false)
-    private String sku;
     private String name;
     private String description;
     private String brand;
+    @Column(name = "model", nullable = false, unique = true)
     private String model;
     private String color;
     private String category;
