@@ -1,0 +1,1116 @@
+openapi: 3.1.0
+info:
+  title: Apple Supply API
+  version: 1.0.0
+  description: REST API documentation for the Apple Supply application. Includes product, order, and order
+    item management.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: Products
+    description: Manage product information.
+  - name: Orders
+    description: Create and manage customer orders, including their items.
+  - name: Order Items
+    description: Read order item information.
+paths:
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: 'Returns a paginated list of products.
+
+        Pagination starts at page 0.
+
+        '
+      operationId: getProducts
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Zero-based page number.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          description: Number of products per page.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+        - name: category
+          in: query
+          required: false
+          description: Filter products by category.
+          schema:
+            type: string
+          example: Smartphone
+        - name: active
+          in: query
+          required: false
+          description: Filter products by active status.
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: Products retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPageResponse'
+              example:
+                content:
+                  - id: 2
+                    name: iPhone 17
+                    description: Apple smartphone
+                    brand: Apple
+                    model: iPhone 17
+                    color: Black
+                    category: Smartphone
+                    unitPrice: 79900.0
+                    active: true
+                    createdAt: '2026-10-12T10:00:00+05:30'
+                    updatedAt: '2026-10-12T10:00:00+05:30'
+                page: 0
+                size: 10
+                totalElements: 1
+                totalPages: 1
+                first: true
+                last: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Products
+      summary: Create a product
+      description: Creates a new product.
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+            example:
+              name: iPhone 17
+              description: Apple smartphone
+              brand: Apple
+              model: iPhone 17
+              color: Black
+              category: Smartphone
+              unitPrice: 79900.0
+              active: true
+      responses:
+        '201':
+          description: Product created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+              example:
+                id: 2
+                name: iPhone 17
+                description: Apple smartphone
+                brand: Apple
+                model: iPhone 17
+                color: Black
+                category: Smartphone
+                unitPrice: 79900.0
+                active: true
+                createdAt: '2026-10-12T10:00:00+05:30'
+                updatedAt: '2026-10-12T10:00:00+05:30'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: A product with conflicting business details already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /products/{productId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags:
+        - Products
+      summary: Get a product by ID
+      operationId: getProductById
+      responses:
+        '200':
+          description: Product retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Products
+      summary: Update a product
+      description: Replaces the editable details of an existing product.
+      operationId: updateProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+            example:
+              name: iPhone 17
+              description: Updated Apple smartphone description
+              brand: Apple
+              model: iPhone 17
+              color: Black
+              category: Smartphone
+              unitPrice: 79900.0
+              active: true
+      responses:
+        '200':
+          description: Product updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Products
+      summary: Deactivate a product
+      description: 'Deactivates a product so it is no longer available for new orders.
+
+        Historical order records should remain available.
+
+        '
+      operationId: deactivateProduct
+      responses:
+        '204':
+          description: Product deactivated successfully. No response body.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Product cannot be deactivated because of a business constraint.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get all orders
+      description: Returns a paginated list of orders.
+      operationId: getOrders
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+        - name: customerId
+          in: query
+          required: false
+          description: Filter orders by customer ID.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          example: 1
+        - name: status
+          in: query
+          required: false
+          description: Filter orders by status.
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+          example: CONFIRMED
+      responses:
+        '200':
+          description: Orders retrieved successfully. Each order contains summary details only; order
+            items are not included.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPageResponse'
+              example:
+                content:
+                  - id: 101
+                    customerId: 1
+                    orderDateTime: '2026-10-19T10:30:00+05:30'
+                    totalAmount: 159800.0
+                    status: DRAFT
+                page: 0
+                size: 10
+                totalElements: 1
+                totalPages: 1
+                first: true
+                last: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: The specified customer does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 404
+                error: Not Found
+                message: 'Customer not found with ID: 9999'
+                timestamp: '2026-10-19T10:30:00+05:30'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags:
+        - Orders
+      summary: Create an order
+      description: >
+        Creates a DRAFT order for an existing customer with one or more items.
+        The server validates the customer and products, rejects duplicate product IDs
+        within the request, captures current product prices, and calculates the order total.
+        Products must be active. Inventory is not deducted or reserved during draft creation.
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+            example:
+              customerId: 1
+              items:
+                - productId: 2
+                  quantity: 2
+      responses:
+        '201':
+          description: Order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+              example:
+                id: 101
+                customerId: 1
+                orderDateTime: '2026-10-19T10:30:00+05:30'
+                totalAmount: 159800.00
+                status: DRAFT
+                items:
+                  - id: 501
+                    productId: 2
+                    productName: iPhone 17
+                    quantity: 2
+                    unitPrice: 79900.0
+        '400':
+          description: >
+            Request validation failed, including invalid quantities or duplicate
+            product IDs within the same order request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer or one or more products were not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: >
+            The request conflicts with a business rule, such as an inactive product.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /orders/{orderId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      tags:
+        - Orders
+      summary: Get an order by ID
+      operationId: getOrderById
+      responses:
+        '200':
+          description: Order retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /orders/{orderId}/status:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    patch:
+      tags:
+        - Orders
+      summary: Update order status
+      description: >
+        Updates the order status according to permitted transitions: DRAFT to CONFIRMED
+        or CANCELLED; CONFIRMED to FULFILLED or CANCELLED. Confirmation requires all
+        products to be active and sufficient stock for every order item. Stock deduction
+        and status change occur atomically. If confirmation fails, the order remains DRAFT
+        and stock remains unchanged. Cancelling a DRAFT order does not change stock.
+        Cancelling a CONFIRMED order restores the previously deducted stock transactionally.
+        FULFILLED and CANCELLED are terminal states.
+      operationId: updateOrderStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdateRequest'
+            example:
+              status: CANCELLED
+      responses:
+        '200':
+          description: Order status updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            The requested status transition is not permitted, a product is inactive,
+            stock is insufficient, or the operation conflicts with another business rule.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /orders/{orderId}/items:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    post:
+      tags:
+        - Orders
+      summary: Add an item to an order
+      description: >
+        Adds an item to an existing DRAFT order. The order and product must exist, the
+        product must be active, and the quantity must be positive. The server captures
+        the current product price and recalculates the order total. Inventory is not
+        deducted during draft modification.
+      operationId: addOrderItemToOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItemRequest'
+            example:
+              productId: 3
+              quantity: 1
+      responses:
+        '201':
+          description: Order item added successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Order or product was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The order is not editable or another business rule prevents modification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /orders/{orderId}/items/{orderItemId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+      - name: orderItemId
+        in: path
+        required: true
+        description: Unique ID of the item within the specified order.
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 501
+    patch:
+      tags:
+        - Orders
+      summary: Update an item quantity in an order
+      description: >
+        Updates the quantity of an existing item in a DRAFT order. The item must belong
+        to the specified order, and the new quantity must be positive. The original unit
+        price is preserved, and the order total is recalculated. Inventory is not changed.
+      operationId: updateOrderItemQuantityInOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItemQuantityUpdateRequest'
+            example:
+              quantity: 3
+      responses:
+        '200':
+          description: Order item updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The order is not editable or another business rule prevents modification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Orders
+      summary: Remove an item from an order
+      description: >
+        Removes an item from a DRAFT order. The item must belong to the specified order.
+        Removing the last remaining item is not permitted. The order total is recalculated,
+        and inventory is not changed.
+      operationId: removeOrderItemFromOrder
+      responses:
+        '204':
+          description: Order item removed successfully. No response body.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The order is not editable or removing the item would leave the order without any items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /order-items:
+    get:
+      tags:
+        - Order Items
+      summary: Get order items
+      description: Returns a paginated list of order items.
+      operationId: getOrderItems
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          example: 10
+        - name: orderId
+          in: query
+          required: false
+          description: Filter items by order ID.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          example: 101
+      responses:
+        '200':
+          description: Order items retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItemPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /order-items/{orderItemId}:
+    parameters:
+      - name: orderItemId
+        in: path
+        required: true
+        description: Unique ID of the order item.
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 501
+    get:
+      tags:
+        - Order Items
+      summary: Get an order item by ID
+      operationId: getOrderItemById
+      responses:
+        '200':
+          description: Order item retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItemResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      description: Unique ID of the product.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 2
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      description: Unique ID of the order.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      example: 101
+  responses:
+    BadRequest:
+      description: Invalid request, parameter, or validation failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 400
+            error: Bad Request
+            message: Request validation failed.
+            timestamp: '2026-10-12T14:30:00+05:30'
+    NotFound:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            error: Not Found
+            message: Resource not found.
+            timestamp: '2026-10-12T14:30:00+05:30'
+    InternalServerError:
+      description: An unexpected server error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 500
+            error: Internal Server Error
+            message: An unexpected error occurred.
+            timestamp: '2026-10-12T14:30:00+05:30'
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - message
+        - timestamp
+      properties:
+        status:
+          type: integer
+          description: HTTP status code.
+          example: 400
+        error:
+          type: string
+          description: Short error classification.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable explanation of the error.
+          example: Request validation failed.
+        timestamp:
+          type: string
+          format: date-time
+          description: Time when the error was generated.
+          example: '2026-10-12T14:30:00+05:30'
+    ProductRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - brand
+        - model
+        - category
+        - unitPrice
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+          description: Display name of the product.
+          example: iPhone 17
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000
+          description: Optional product description.
+          example: Apple smartphone
+        brand:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Apple
+        model:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: iPhone 17
+        color:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+          example: Black
+        category:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Smartphone
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0.01
+          description: Product price in the application's configured currency.
+          example: 79900.0
+        active:
+          type: boolean
+          default: true
+          description: Whether the product is available for new orders.
+          example: true
+    ProductResponse:
+      type: object
+      required:
+        - id
+        - name
+        - brand
+        - model
+        - category
+        - unitPrice
+        - active
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 2
+        name:
+          type: string
+          example: iPhone 17
+        description:
+          type:
+            - string
+            - 'null'
+          example: Apple smartphone
+        brand:
+          type: string
+          example: Apple
+        model:
+          type: string
+          example: iPhone 17
+        color:
+          type:
+            - string
+            - 'null'
+          example: Black
+        category:
+          type: string
+          example: Smartphone
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 79900.0
+        active:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2026-10-12T10:00:00+05:30'
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2026-10-12T10:00:00+05:30'
+    ProductPageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+        - first
+        - last
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+        page:
+          type: integer
+          minimum: 0
+          example: 0
+        size:
+          type: integer
+          minimum: 1
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 1
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 1
+        first:
+          type: boolean
+          example: true
+        last:
+          type: boolean
+          example: true
+    OrderRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - customerId
+        - items
+      properties:
+        customerId:
+          type: integer
+          format: int64
+          minimum: 1
+          description: ID of the existing customer placing the order.
+          example: 1
+        items:
+          type: array
+          minItems: 1
+          description: >
+            Products and quantities requested for this order. Each productId must appear
+            only once; duplicate product IDs are rejected with 400 Bad Request.
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+    OrderItemInput:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 2
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+    OrderStatus:
+      type: string
+      enum:
+        - DRAFT
+        - CONFIRMED
+        - FULFILLED
+        - CANCELLED
+      description: >
+        Current order status. DRAFT means the order is created and awaiting confirmation;
+        CONFIRMED means stock was validated and deducted; FULFILLED means the order was
+        fulfilled completely; CANCELLED means the order was cancelled. FULFILLED and
+        CANCELLED are terminal states. Permitted transitions are documented on the
+        PATCH /orders/{orderId}/status operation.
+    OrderStatusUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+          description: Requested order status.
+          example: CANCELLED
+    OrderResponse:
+      type: object
+      required:
+        - id
+        - customerId
+        - orderDateTime
+        - totalAmount
+        - status
+        - items
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 101
+        customerId:
+          type: integer
+          format: int64
+          example: 1
+        orderDateTime:
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2026-10-12T14:30:00+05:30'
+        totalAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: Calculated by the server from the order items.
+          example: 159800.0
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+    OrderSummaryResponse:
+      type: object
+      description: Summary details for an order, without its order items.
+      required:
+        - id
+        - customerId
+        - orderDateTime
+        - totalAmount
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 101
+        customerId:
+          type: integer
+          format: int64
+          example: 1
+        orderDateTime:
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2026-10-12T14:30:00+05:30'
+        totalAmount:
+          type: number
+          format: double
+          minimum: 0
+          description: Calculated by the server from the order items.
+          example: 159800.0
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+    OrderPageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+        - first
+        - last
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummaryResponse'
+        page:
+          type: integer
+          minimum: 0
+          example: 0
+        size:
+          type: integer
+          minimum: 1
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 1
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 1
+        first:
+          type: boolean
+          example: true
+        last:
+          type: boolean
+          example: true
+    OrderItemRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 3
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+      description: Product and quantity to add to the order identified in the URL.
+    OrderItemQuantityUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          example: 3
+    OrderItemResponse:
+      type: object
+      required:
+        - id
+        - productId
+        - productName
+        - quantity
+        - unitPrice
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 501
+        productId:
+          type: integer
+          format: int64
+          example: 2
+        productName:
+          type: string
+          readOnly: true
+          example: iPhone 17
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          description: Unit price applied when the item was ordered.
+          example: 79900.0
+    OrderItemPageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+        - first
+        - last
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+        page:
+          type: integer
+          minimum: 0
+          example: 0
+        size:
+          type: integer
+          minimum: 1
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 1
+        totalPages:
+          type: integer
+          minimum: 0
+          example: 1
+        first:
+          type: boolean
+          example: true
+        last:
+          type: boolean
+          example: true
+
