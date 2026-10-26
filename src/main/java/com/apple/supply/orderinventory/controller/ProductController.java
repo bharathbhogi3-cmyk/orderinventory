@@ -10,6 +10,7 @@ import com.apple.supply.orderinventory.dto.UpdateProductRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -65,5 +66,14 @@ public class ProductController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable Long productId) {
         productService.deleteProduct(productId);
+    }
+
+    // Update product available quantity
+    @PatchMapping("/{productId}/quantity")
+    public ProductResponse updateProductQuantity(
+            @PathVariable Long productId,
+            @Valid @RequestBody UpdateProductQuantityRequest request) {
+
+        return productService.updateProductQuantity(productId, request);
     }
 }

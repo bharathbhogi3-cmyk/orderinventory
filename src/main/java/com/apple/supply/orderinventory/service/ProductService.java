@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -221,5 +222,24 @@ public class ProductService {
         }
 
         productRepository.delete(product);
+    }
+
+    // Updates the Quantity of the product(Replaces the current Quantity)
+    @Transactional
+    public ProductResponse updateProductQuantity(
+            Long productId,
+            UpdateProductQuantityRequest request) {
+
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Product not found with id: " + productId
+                ));
+
+        product.setQuantityAvailable(request.getQuantityAvailable());
+        product.setUpdatedAt(LocalDateTime.now());
+
+        Product updatedProduct = productRepository.save(product);
+
+        return toResponse(updatedProduct);
     }
 }
