@@ -56,12 +56,33 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProductResponse> getAllProducts(int page, int size) {
+    public Page<ProductResponse> getAllProducts(
+            int page,
+            int size,
+            String category,
+            Boolean active) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return productRepository.findAll(pageable)
-                .map(this::toResponse);
+        Page<Product> products;
+
+        boolean hasCategory =
+                category != null && !category.isBlank();
+
+        if (hasCategory && active != null) {
+            products = productRepository.findByCategoryAndActive(
+                    category, active, pageable);
+        } else if (hasCategory) {
+            products = productRepository.findByCategory(
+                    category, pageable);
+        } else if (active != null) {
+            products = productRepository.findByActive(
+                    active, pageable);
+        } else {
+            products = productRepository.findAll(pageable);
+        }
+
+        return products.map(this::toResponse);
     }
 
     @Transactional(readOnly = true)

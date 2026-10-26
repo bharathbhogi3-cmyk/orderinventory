@@ -33,13 +33,16 @@ public class ProductController {
         return productService.createProduct(request);
     }
 
-    // Get all the products
+    // Get all products with optional filters
     @GetMapping
     public Page<ProductResponse> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Boolean active) {
 
-        return productService.getAllProducts(page, size);
+        return productService.getAllProducts(
+                page, size, category, active);
     }
 
     // Get product details by id
