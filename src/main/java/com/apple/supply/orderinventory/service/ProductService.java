@@ -8,6 +8,7 @@ import com.apple.supply.orderinventory.exception.BusinessConflictException;
 import com.apple.supply.orderinventory.model.Product;
 import com.apple.supply.orderinventory.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,13 +20,10 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
-
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {

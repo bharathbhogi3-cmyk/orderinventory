@@ -15,6 +15,7 @@ import com.apple.supply.orderinventory.repository.ProductRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,24 +33,13 @@ import com.apple.supply.orderinventory.dto.UpdateOrderStatusRequest;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
-
-    public OrderService(
-            OrderRepository orderRepository,
-            CustomerRepository customerRepository,
-            ProductRepository productRepository,
-            OrderItemRepository orderItemRepository) {
-
-        this.orderRepository = orderRepository;
-        this.customerRepository = customerRepository;
-        this.productRepository = productRepository;
-        this.orderItemRepository = orderItemRepository;
-    }
 
     @Transactional
     public Order createDraftOrder(CreateOrderRequest request) {

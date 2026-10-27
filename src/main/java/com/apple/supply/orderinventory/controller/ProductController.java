@@ -3,6 +3,7 @@ package com.apple.supply.orderinventory.controller;
 import com.apple.supply.orderinventory.dto.CreateProductRequest;
 import com.apple.supply.orderinventory.dto.ProductResponse;
 import com.apple.supply.orderinventory.service.ProductService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,13 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/products")
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
 
     // Create a new product.
     @PostMapping
