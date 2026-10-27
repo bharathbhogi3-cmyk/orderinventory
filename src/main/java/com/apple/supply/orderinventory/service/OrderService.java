@@ -97,11 +97,10 @@ public class OrderService {
                     BigDecimal.valueOf(itemRequest.getQuantity()));
 
             // Create the order item.
-            OrderItem orderItem = OrderItem.builder()
-                    .product(product)
-                    .quantity(itemRequest.getQuantity())
-                    .unitPrice(unitPrice)
-                    .build();
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProduct(product);
+            orderItem.setQuantity(itemRequest.getQuantity());
+            orderItem.setUnitPrice(unitPrice);
 
             // Maintain both sides of the relationship.
             order.addOrderItem(orderItem);
@@ -400,11 +399,10 @@ public class OrderService {
                                 + product.getId());
             }
 
-            item = OrderItem.builder()
-                    .product(product)
-                    .quantity(request.getQuantity())
-                    .unitPrice(unitPrice)
-                    .build();
+            item = new OrderItem();
+            item.setProduct(product);
+            item.setQuantity(request.getQuantity());
+            item.setUnitPrice(unitPrice);
 
             // Maintain both sides of the relationship.
             order.addOrderItem(item);
@@ -424,13 +422,12 @@ public class OrderService {
         orderRepository.save(order);
 
         // 9. Return the added or updated order item.
-        return OrderItemResponse.builder()
-                .id(item.getId())
-                .productId(item.getProduct().getId())
-                .productName(item.getProduct().getName())
-                .quantity(item.getQuantity())
-                .unitPrice(item.getUnitPrice())
-                .build();
+        return new OrderItemResponse(
+                item.getId(),
+                item.getProduct().getId(),
+                item.getProduct().getName(),
+                item.getQuantity(),
+                item.getUnitPrice());
     }
 
 
