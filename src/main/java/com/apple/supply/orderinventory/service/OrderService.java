@@ -22,12 +22,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.apple.supply.orderinventory.dto.OrderPageResponse;
 import com.apple.supply.orderinventory.dto.OrderSummaryResponse;
-import com.apple.supply.orderinventory.model.OrderStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 import com.apple.supply.orderinventory.dto.OrderResponse;
 import com.apple.supply.orderinventory.dto.OrderItemResponse;
 import com.apple.supply.orderinventory.dto.UpdateOrderStatusRequest;
@@ -600,48 +598,6 @@ public class OrderService {
                 item.getProduct().getName(),
                 item.getQuantity(),
                 item.getUnitPrice());
-    }
-
-
-    @Transactional(readOnly = true)
-    public Page<OrderItemResponse> getOrderItems(
-            int page,
-            int size,
-            Long orderId) {
-
-        // 1. Validate pagination parameters.
-        if (page < 0) {
-            throw new IllegalArgumentException(
-                    "Page number cannot be negative.");
-        }
-
-        if (size < 1 || size > 100) {
-            throw new IllegalArgumentException(
-                    "Page size must be between 1 and 100.");
-        }
-
-        // 2. Validate the order if a filter was provided.
-        if (orderId != null
-                && !orderRepository.existsById(orderId)) {
-            throw new EntityNotFoundException(
-                    "Order not found with ID: " + orderId);
-        }
-
-        // 3. Create pagination settings.
-        Pageable pageable = PageRequest.of(page, size);
-
-        // 4. Retrieve all items or filter by order ID.
-        Page<OrderItem> items = (orderId == null)
-                ? orderItemRepository.findAll(pageable)
-                : orderItemRepository.findByOrder_Id(orderId, pageable);
-
-        // 5. Convert entities to response DTOs.
-        return items.map(item -> new OrderItemResponse(
-                item.getId(),
-                item.getProduct().getId(),
-                item.getProduct().getName(),
-                item.getQuantity(),
-                item.getUnitPrice()));
     }
 
 
