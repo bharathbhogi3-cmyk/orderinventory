@@ -5,9 +5,9 @@ import com.apple.supply.orderinventory.dto.CreateProductRequest;
 import com.apple.supply.orderinventory.dto.ProductResponse;
 import com.apple.supply.orderinventory.dto.UpdateProductRequest;
 import com.apple.supply.orderinventory.exception.BusinessConflictException;
+import com.apple.supply.orderinventory.exception.ProductNotFoundException;
 import com.apple.supply.orderinventory.model.Product;
 import com.apple.supply.orderinventory.repository.ProductRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -88,7 +88,7 @@ public class ProductService {
     public ProductResponse getProductById(Long productId) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
                 ));
 
@@ -102,7 +102,7 @@ public class ProductService {
             UpdateProductRequest request) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
                 ));
 
@@ -207,7 +207,7 @@ public class ProductService {
     public void deleteProduct(Long productId) {
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
                 ));
 
@@ -229,7 +229,7 @@ public class ProductService {
             UpdateProductQuantityRequest request) {
 
         Product product = productRepository.findByIdForUpdate(productId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
                 ));
 

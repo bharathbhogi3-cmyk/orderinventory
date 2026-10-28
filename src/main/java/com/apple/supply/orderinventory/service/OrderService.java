@@ -2,7 +2,7 @@ package com.apple.supply.orderinventory.service;
 
 import com.apple.supply.orderinventory.dto.CreateOrderItemRequest;
 import com.apple.supply.orderinventory.dto.CreateOrderRequest;
-import com.apple.supply.orderinventory.exception.BusinessConflictException;
+import com.apple.supply.orderinventory.exception.*;
 import com.apple.supply.orderinventory.model.Customer;
 import com.apple.supply.orderinventory.model.Order;
 import com.apple.supply.orderinventory.model.OrderItem;
@@ -12,9 +12,6 @@ import com.apple.supply.orderinventory.repository.CustomerRepository;
 import com.apple.supply.orderinventory.repository.OrderItemRepository;
 import com.apple.supply.orderinventory.repository.OrderRepository;
 import com.apple.supply.orderinventory.repository.ProductRepository;
-
-import jakarta.persistence.EntityNotFoundException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +45,7 @@ public class OrderService {
         Customer customer = customerRepository
                 .findById(request.getCustomerId())
                 .orElseThrow(() ->
-                        new EntityNotFoundException(
+                        new CustomerNotFoundException(
                                 "Customer not found: "
                                         + request.getCustomerId()));
 
@@ -68,7 +65,7 @@ public class OrderService {
             Product product = productRepository
                     .findById(itemRequest.getProductId())
                     .orElseThrow(() ->
-                            new EntityNotFoundException(
+                            new ProductNotFoundException(
                                     "Product not found: "
                                             + itemRequest.getProductId()));
 
@@ -140,7 +137,7 @@ public class OrderService {
         if (customerId != null
                 && !customerRepository.existsById(customerId)) {
 
-            throw new EntityNotFoundException(
+            throw new CustomerNotFoundException(
                     "Customer not found with ID: " + customerId);
         }
 
@@ -178,7 +175,7 @@ public class OrderService {
 
         // 1. Find the order or throw a 404 exception.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 2. Convert each order item into its response DTO.
@@ -210,7 +207,7 @@ public class OrderService {
             UpdateOrderStatusRequest request) {
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         OrderStatus currentStatus = order.getStatus();
@@ -240,7 +237,7 @@ public class OrderService {
             for (OrderItem item : items) {
                 Product product = productRepository
                         .findByIdForUpdate(item.getProduct().getId())
-                        .orElseThrow(() -> new EntityNotFoundException(
+                        .orElseThrow(() -> new ProductNotFoundException(
                                 "Product not found: "
                                         + item.getProduct().getId()));
 
@@ -260,7 +257,7 @@ public class OrderService {
             for (OrderItem item : items) {
                 Product product = productRepository
                         .findByIdForUpdate(item.getProduct().getId())
-                        .orElseThrow(() -> new EntityNotFoundException(
+                        .orElseThrow(() -> new ProductNotFoundException(
                                 "Product not found: "
                                         + item.getProduct().getId()));
 
@@ -295,7 +292,7 @@ public class OrderService {
             for (OrderItem item : items) {
                 Product product = productRepository
                         .findByIdForUpdate(item.getProduct().getId())
-                        .orElseThrow(() -> new EntityNotFoundException(
+                        .orElseThrow(() -> new ProductNotFoundException(
                                 "Product not found: "
                                         + item.getProduct().getId()));
 
@@ -343,7 +340,7 @@ public class OrderService {
 
         // 1. Find the existing order.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 2. Only draft orders can be modified.
@@ -362,7 +359,7 @@ public class OrderService {
         // 4. Find the requested product.
         Product product = productRepository
                 .findById(request.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with ID: "
                                 + request.getProductId()));
 
@@ -445,7 +442,7 @@ public class OrderService {
 
         // 2. Find the order.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 3. Only draft orders can be modified.
@@ -459,7 +456,7 @@ public class OrderService {
                 .filter(orderItem ->
                         orderItem.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderItemNotFoundException(
                         "Order item " + itemId
                                 + " not found in order " + orderId));
 
@@ -496,7 +493,7 @@ public class OrderService {
 
         // 1. Find the order.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 2. Only DRAFT orders can be modified.
@@ -510,7 +507,7 @@ public class OrderService {
                 .filter(orderItem ->
                         orderItem.getId().equals(orderItemId))
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderItemNotFoundException(
                         "Order item " + orderItemId
                                 + " not found in order " + orderId));
 
@@ -547,7 +544,7 @@ public class OrderService {
 
         // 1. Find the order.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 2. Convert each item into its response DTO.
@@ -569,7 +566,7 @@ public class OrderService {
 
         // 1. Find the order.
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderNotFoundException(
                         "Order not found with ID: " + orderId));
 
         // 2. Find the item within that specific order.
@@ -577,7 +574,7 @@ public class OrderService {
                 .filter(orderItem ->
                         orderItem.getId().equals(orderItemId))
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderItemNotFoundException(
                         "Order item " + orderItemId
                                 + " not found in order " + orderId));
 
@@ -596,7 +593,7 @@ public class OrderService {
 
         // Find the order item.
         OrderItem item = orderItemRepository.findById(orderItemId)
-                .orElseThrow(() -> new EntityNotFoundException(
+                .orElseThrow(() -> new OrderItemNotFoundException(
                         "Order item not found with ID: "
                                 + orderItemId));
 

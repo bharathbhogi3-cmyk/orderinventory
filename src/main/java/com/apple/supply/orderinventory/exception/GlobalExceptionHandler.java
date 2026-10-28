@@ -116,4 +116,36 @@ public class GlobalExceptionHandler {
                 "Invalid value for parameter: " + ex.getName()
         );
     }
+
+    @ExceptionHandler(CustomerNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCustomerNotFound(
+            CustomerNotFoundException ex) {
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleProductNotFound(
+            ProductNotFoundException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrderNotFound(
+            OrderNotFoundException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderItemNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOrderItemNotFound(
+            OrderItemNotFoundException ex) {
+
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
 }
