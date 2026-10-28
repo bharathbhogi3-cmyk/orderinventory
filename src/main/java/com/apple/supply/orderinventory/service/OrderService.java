@@ -55,9 +55,6 @@ public class OrderService {
         order.setOrderDateTime(LocalDateTime.now());
         order.setStatus(OrderStatus.DRAFT);
 
-        // 3. Start calculating the order total.
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
         // 4. Process each requested order item.
         for (CreateOrderItemRequest itemRequest
                 : request.getItems()) {
@@ -89,10 +86,6 @@ public class OrderService {
                         "Product has no unit price: " + product.getId());
             }
 
-            // Calculate this item's amount.
-            BigDecimal itemAmount = unitPrice.multiply(
-                    BigDecimal.valueOf(itemRequest.getQuantity()));
-
             // Create the order item.
             OrderItem orderItem = new OrderItem();
             orderItem.setProduct(product);
@@ -101,13 +94,10 @@ public class OrderService {
 
             // Maintain both sides of the relationship.
             order.addOrderItem(orderItem);
-
-            // Add this item's amount to the order total.
-            totalAmount = totalAmount.add(itemAmount);
         }
 
         // 5. Store the calculated total.
-        order.setTotalAmount(totalAmount);
+        recalculateOrderTotal(order);
 
         // 6. Save the order and its items.
         // The configured PERSIST cascade saves the new items.
@@ -174,20 +164,11 @@ public class OrderService {
     public OrderResponse getOrderById(Long orderId) {
 
         // 1. Find the order or throw a 404 exception.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 2. Convert each order item into its response DTO.
-        var items = order.getOrderItems()
-                .stream()
-                .map(item -> new OrderItemResponse(
-                        item.getId(),
-                        item.getProduct().getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getUnitPrice()
-                ))
+        var items = order.getOrderItems().stream()
+                .map(this::toOrderItemResponse)
                 .toList();
 
         // 3. Return the complete order response.
@@ -206,9 +187,7 @@ public class OrderService {
             Long orderId,
             UpdateOrderStatusRequest request) {
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         OrderStatus currentStatus = order.getStatus();
         OrderStatus requestedStatus = request.getStatus();
@@ -313,13 +292,8 @@ public class OrderService {
         orderRepository.save(order);
 
         // Build the response inside the transaction.
-        var responseItems = order.getOrderItems().stream()
-                .map(item -> new OrderItemResponse(
-                        item.getId(),
-                        item.getProduct().getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getUnitPrice()))
+        var items = order.getOrderItems().stream()
+                .map(this::toOrderItemResponse)
                 .toList();
 
         return new OrderResponse(
@@ -328,7 +302,7 @@ public class OrderService {
                 order.getOrderDateTime(),
                 order.getTotalAmount(),
                 order.getStatus(),
-                responseItems);
+                items);
     }
 
 
@@ -339,9 +313,7 @@ public class OrderService {
             CreateOrderItemRequest request) {
 
         // 1. Find the existing order.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 2. Only draft orders can be modified.
         if (order.getStatus() != OrderStatus.DRAFT) {
@@ -403,28 +375,19 @@ public class OrderService {
 
             // Maintain both sides of the relationship.
             order.addOrderItem(item);
+
+            // Explicitly saving the new item and retaining the saved entity.
+            item = orderItemRepository.saveAndFlush(item);
         }
 
         // 7. Recalculate the order total.
-        BigDecimal totalAmount = order.getOrderItems().stream()
-                .map(orderItem ->
-                        orderItem.getUnitPrice().multiply(
-                                BigDecimal.valueOf(
-                                        orderItem.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        order.setTotalAmount(totalAmount);
+        recalculateOrderTotal(order);
 
         // 8. Save the order and its changes.
         orderRepository.save(order);
 
         // 9. Return the added or updated order item.
-        return new OrderItemResponse(
-                item.getId(),
-                item.getProduct().getId(),
-                item.getProduct().getName(),
-                item.getQuantity(),
-                item.getUnitPrice());
+        return toOrderItemResponse(item);
     }
 
 
@@ -441,9 +404,7 @@ public class OrderService {
         }
 
         // 2. Find the order.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 3. Only draft orders can be modified.
         if (order.getStatus() != OrderStatus.DRAFT) {
@@ -452,38 +413,20 @@ public class OrderService {
         }
 
         // 4. Find the item within this order.
-        OrderItem item = order.getOrderItems().stream()
-                .filter(orderItem ->
-                        orderItem.getId().equals(itemId))
-                .findFirst()
-                .orElseThrow(() -> new OrderItemNotFoundException(
-                        "Order item " + itemId
-                                + " not found in order " + orderId));
+        OrderItem item = findOrderItemById(order, itemId);
 
         // 5. Update only the quantity.
         // Preserve the original unit price.
         item.setQuantity(quantity);
 
         // 6. Recalculate the order total.
-        BigDecimal totalAmount = order.getOrderItems().stream()
-                .map(orderItem ->
-                        orderItem.getUnitPrice().multiply(
-                                BigDecimal.valueOf(
-                                        orderItem.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        order.setTotalAmount(totalAmount);
+        recalculateOrderTotal(order);
 
         // 7. Save the order and its updated item.
         orderRepository.save(order);
 
         // 8. Return the updated item.
-        return new OrderItemResponse(
-                item.getId(),
-                item.getProduct().getId(),
-                item.getProduct().getName(),
-                item.getQuantity(),
-                item.getUnitPrice());
+        return toOrderItemResponse(item);
     }
 
 
@@ -492,9 +435,7 @@ public class OrderService {
     public void deleteOrderItem(Long orderId, Long orderItemId) {
 
         // 1. Find the order.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 2. Only DRAFT orders can be modified.
         if (order.getStatus() != OrderStatus.DRAFT) {
@@ -503,13 +444,7 @@ public class OrderService {
         }
 
         // 3. Find the item within the specified order.
-        OrderItem item = order.getOrderItems().stream()
-                .filter(orderItem ->
-                        orderItem.getId().equals(orderItemId))
-                .findFirst()
-                .orElseThrow(() -> new OrderItemNotFoundException(
-                        "Order item " + orderItemId
-                                + " not found in order " + orderId));
+        OrderItem item = findOrderItemById(order, orderItemId);
 
         // 4. Prevent deletion of the last remaining item.
         if (order.getOrderItems().size() <= 1) {
@@ -524,17 +459,7 @@ public class OrderService {
         orderItemRepository.delete(item);
 
         // 7. Recalculate the order total.
-        BigDecimal totalAmount = order.getOrderItems().stream()
-                .map(orderItem ->
-                        orderItem.getUnitPrice().multiply(
-                                BigDecimal.valueOf(
-                                        orderItem.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        order.setTotalAmount(totalAmount);
-
-        // 8. Save the updated order.
-        orderRepository.save(order);
+        recalculateOrderTotal(order);
     }
 
 
@@ -543,18 +468,11 @@ public class OrderService {
     public List<OrderItemResponse> getOrderItems(Long orderId) {
 
         // 1. Find the order.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 2. Convert each item into its response DTO.
         return order.getOrderItems().stream()
-                .map(item -> new OrderItemResponse(
-                        item.getId(),
-                        item.getProduct().getId(),
-                        item.getProduct().getName(),
-                        item.getQuantity(),
-                        item.getUnitPrice()))
+                .map(this::toOrderItemResponse)
                 .toList();
     }
 
@@ -565,26 +483,13 @@ public class OrderService {
             Long orderItemId) {
 
         // 1. Find the order.
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with ID: " + orderId));
+        Order order = findOrderById(orderId);
 
         // 2. Find the item within that specific order.
-        OrderItem item = order.getOrderItems().stream()
-                .filter(orderItem ->
-                        orderItem.getId().equals(orderItemId))
-                .findFirst()
-                .orElseThrow(() -> new OrderItemNotFoundException(
-                        "Order item " + orderItemId
-                                + " not found in order " + orderId));
+        OrderItem item = findOrderItemById(order, orderItemId);
 
         // 3. Return the item details.
-        return new OrderItemResponse(
-                item.getId(),
-                item.getProduct().getId(),
-                item.getProduct().getName(),
-                item.getQuantity(),
-                item.getUnitPrice());
+        return toOrderItemResponse(item);
     }
 
 
@@ -598,13 +503,49 @@ public class OrderService {
                                 + orderItemId));
 
         // Return the response DTO.
+        return toOrderItemResponse(item);
+    }
+
+
+    // Created Helper method to calculate the order Total
+    private void recalculateOrderTotal(Order order) {
+
+        BigDecimal totalAmount = order.getOrderItems().stream()
+                .map(item -> item.getUnitPrice().multiply(
+                        BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        order.setTotalAmount(totalAmount);
+    }
+
+
+    // Helper method for Order item response
+    private OrderItemResponse toOrderItemResponse(OrderItem item) {
         return new OrderItemResponse(
                 item.getId(),
                 item.getProduct().getId(),
                 item.getProduct().getName(),
                 item.getQuantity(),
-                item.getUnitPrice());
+                item.getUnitPrice()
+        );
     }
 
 
+    // Helper method for find Order by ID
+    private Order findOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(
+                        "Order not found with ID: " + orderId));
+    }
+
+
+    // Helper method for find OrderItem by ID
+    private OrderItem findOrderItemById(Order order, Long orderItemId) {
+        return order.getOrderItems().stream()
+                .filter(item -> item.getId().equals(orderItemId))
+                .findFirst()
+                .orElseThrow(() -> new OrderItemNotFoundException(
+                        "Order item " + orderItemId
+                                + " not found in order " + order.getId()));
+    }
 }
