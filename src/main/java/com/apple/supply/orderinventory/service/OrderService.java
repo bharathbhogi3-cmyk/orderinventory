@@ -15,6 +15,7 @@ import com.apple.supply.orderinventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ import com.apple.supply.orderinventory.dto.OrderItemResponse;
 import com.apple.supply.orderinventory.dto.UpdateOrderStatusRequest;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -40,6 +42,9 @@ public class OrderService {
 
     @Transactional
     public Order createDraftOrder(CreateOrderRequest request) {
+
+        log.info("Creating draft order for customer ID: {}",
+                request.getCustomerId());
 
         // 1. Find the customer in the database.
         Customer customer = customerRepository
@@ -101,7 +106,13 @@ public class OrderService {
 
         // 6. Save the order and its items.
         // The configured PERSIST cascade saves the new items.
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        log.info("Draft order created successfully. Order ID: {}, Customer ID: {}",
+                savedOrder.getId(),
+                request.getCustomerId());
+
+        return savedOrder;
     }
 
 
@@ -111,6 +122,10 @@ public class OrderService {
             int size,
             Long customerId,
             OrderStatus status) {
+
+        log.info(
+                "Fetching orders. Page: {}, Size: {}, Customer ID: {}, Status: {}",
+                page, size, customerId, status);
 
         // Validate pagination inputs.
         if (page < 0) {
@@ -148,6 +163,8 @@ public class OrderService {
                         order.getStatus()
                 ));
 
+        log.info("Successfully retrieved {} orders", orders.getTotalElements());
+
         // Return the results and pagination information.
         return new OrderPageResponse(
                 summaries.getContent(),
@@ -163,8 +180,13 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId) {
 
+        log.info("Fetching order details for order ID: {}", orderId);
+
         // 1. Find the order or throw a 404 exception.
         Order order = findOrderById(orderId);
+
+        log.info("Order retrieved successfully. Order ID: {}, Status: {}",
+                order.getId(), order.getStatus());
 
         // 2. Convert each order item into its response DTO.
         var items = order.getOrderItems().stream()
@@ -186,6 +208,9 @@ public class OrderService {
     public OrderResponse updateOrderStatus(
             Long orderId,
             UpdateOrderStatusRequest request) {
+
+        log.info("Updating status for order ID: {} to status: {}",
+                orderId, request.getStatus());
 
         Order order = findOrderById(orderId);
 
@@ -291,6 +316,9 @@ public class OrderService {
 
         orderRepository.save(order);
 
+        log.info("Order ID: {} status updated successfully to {}",
+                order.getId(), order.getStatus());
+
         // Build the response inside the transaction.
         var items = order.getOrderItems().stream()
                 .map(this::toOrderItemResponse)
@@ -311,6 +339,8 @@ public class OrderService {
     public OrderItemResponse addOrderItem(
             Long orderId,
             CreateOrderItemRequest request) {
+
+        log.info("Adding item to order ID: {}", orderId);
 
         // 1. Find the existing order.
         Order order = findOrderById(orderId);
@@ -386,6 +416,11 @@ public class OrderService {
         // 8. Save the order and its changes.
         orderRepository.save(order);
 
+        log.info("Order item added successfully. Item ID: {}, Order ID: {}, Product ID: {}",
+                item.getId(),
+                orderId,
+                item.getProduct().getId());
+
         // 9. Return the added or updated order item.
         return toOrderItemResponse(item);
     }
@@ -396,6 +431,8 @@ public class OrderService {
             Long orderId,
             Long itemId,
             Integer quantity) {
+        log.info("Updating quantity for order item ID: {} in order ID: {}",
+                itemId, orderId);
 
         // 1. Validate the requested quantity.
         if (quantity == null || quantity <= 0) {
@@ -425,6 +462,9 @@ public class OrderService {
         // 7. Save the order and its updated item.
         orderRepository.save(order);
 
+        log.info("Order item quantity updated successfully. Item ID: {}, New quantity: {}",
+                itemId, item.getQuantity());
+
         // 8. Return the updated item.
         return toOrderItemResponse(item);
     }
@@ -433,6 +473,9 @@ public class OrderService {
 
     @Transactional
     public void deleteOrderItem(Long orderId, Long orderItemId) {
+
+        log.info("Deleting order item ID: {} from order ID: {}",
+                orderItemId, orderId);
 
         // 1. Find the order.
         Order order = findOrderById(orderId);
@@ -460,6 +503,9 @@ public class OrderService {
 
         // 7. Recalculate the order total.
         recalculateOrderTotal(order);
+
+        log.info("Order item deleted successfully. Item ID: {}, Order ID: {}",
+                orderItemId, orderId);
     }
 
 
@@ -482,11 +528,16 @@ public class OrderService {
             Long orderId,
             Long orderItemId) {
 
+        log.info("Fetching order item with ID: {}", orderItemId);
+
         // 1. Find the order.
         Order order = findOrderById(orderId);
 
         // 2. Find the item within that specific order.
         OrderItem item = findOrderItemById(order, orderItemId);
+
+        log.info("Order item retrieved successfully. Item ID: {}",
+                item.getId());
 
         // 3. Return the item details.
         return toOrderItemResponse(item);

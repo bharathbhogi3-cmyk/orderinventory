@@ -18,7 +18,9 @@ import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -27,6 +29,8 @@ public class ProductService {
 
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
+
+        log.info("Creating product with name: {}", request.getName());
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -51,6 +55,10 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
 
+        log.info("Product created successfully. Product ID: {}, Model: {}",
+                savedProduct.getId(),
+                savedProduct.getModel());
+
         return toResponse(savedProduct);
     }
 
@@ -60,6 +68,10 @@ public class ProductService {
             int size,
             String category,
             Boolean active) {
+
+        log.info(
+                "Fetching products. Page: {}, Size: {}, Category: {}, Active: {}",
+                page, size, category, active);
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -81,17 +93,23 @@ public class ProductService {
             products = productRepository.findAll(pageable);
         }
 
+        log.info("Successfully retrieved {} products",
+                products.getTotalElements());
         return products.map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long productId) {
 
+        log.info("Fetching product with ID: {}", productId);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
                 ));
 
+        log.info("Product retrieved successfully. Product ID: {}, Model: {}",
+                product.getId(), product.getModel());
         return toResponse(product);
     }
 
@@ -100,6 +118,8 @@ public class ProductService {
     public ProductResponse updateProduct(
             Long productId,
             UpdateProductRequest request) {
+
+        log.info("Updating product with ID: {}", productId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(
@@ -126,6 +146,10 @@ public class ProductService {
         product.setUpdatedAt(LocalDateTime.now());
 
         Product updatedProduct = productRepository.save(product);
+
+        log.info("Product updated successfully. Product ID: {}, Model: {}",
+                updatedProduct.getId(),
+                updatedProduct.getModel());
 
         return toResponse(updatedProduct);
     }
@@ -206,6 +230,8 @@ public class ProductService {
     @Transactional
     public void deleteProduct(Long productId) {
 
+        log.info("Deleting product with ID: {}", productId);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(
                         "Product not found with id: " + productId
@@ -220,6 +246,9 @@ public class ProductService {
         }
 
         productRepository.delete(product);
+
+        log.info("Product deleted successfully. Product ID: {}, Model: {}",
+                product.getId(), product.getModel());
     }
 
     // Updates the Quantity of the product(Replaces the current Quantity)
@@ -227,6 +256,8 @@ public class ProductService {
     public ProductResponse updateProductQuantity(
             Long productId,
             UpdateProductQuantityRequest request) {
+
+        log.info("Updating quantity for product ID: {}", productId);
 
         Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new ProductNotFoundException(
@@ -237,6 +268,11 @@ public class ProductService {
         product.setUpdatedAt(LocalDateTime.now());
 
         Product updatedProduct = productRepository.save(product);
+
+        log.info(
+                "Product quantity updated successfully. Product ID: {}, New quantity: {}",
+                updatedProduct.getId(),
+                updatedProduct.getQuantityAvailable());
 
         return toResponse(updatedProduct);
     }
