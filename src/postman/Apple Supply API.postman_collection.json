@@ -1113,6 +1113,273 @@
               "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
             }
           ]
+        },
+        {
+          "name": "Update Product Quantity",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"quantityAvailable\": 30\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/:productId/quantity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                ":productId",
+                "quantity"
+              ],
+              "variable": [
+                {
+                  "key": "productId",
+                  "value": "101"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Updated the Quantity Successfully",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"quantityAvailable\": 25\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/products/:productId/quantity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    ":productId",
+                    "quantity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "productId",
+                      "value": "2"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "268"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 26 Oct 2026 11:00:27 GMT"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=60"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 2,\n  \"name\": \"MacBook Air M4\",\n  \"description\": \"Lightweight Apple laptop\",\n  \"brand\": \"Apple\",\n  \"model\": \"MacBook Air M4\",\n  \"color\": \"Silver\",\n  \"category\": \"Laptop\",\n  \"unitPrice\": 99999,\n  \"active\": true,\n  \"quantityAvailable\": 25,\n  \"createdAt\": null,\n  \"updatedAt\": \"2026-10-26T16:30:27.4049567\"\n}"
+            },
+            {
+              "name": "Invalid request - Quantity cannot be negative",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"quantityAvailable\": -25\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/products/:productId/quantity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    ":productId",
+                    "quantity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "productId",
+                      "value": "2"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Transfer-Encoding",
+                  "value": "chunked"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 26 Oct 2026 11:02:27 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"quantityAvailable: Quantity cannot be negative\",\n  \"timestamp\": \"2026-10-26T16:32:27.8222044\"\n}"
+            },
+            {
+              "name": "quantity Available is missing",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"quantityAvailable\": \r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/products/:productId/quantity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    ":productId",
+                    "quantity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "productId",
+                      "value": "2"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Transfer-Encoding",
+                  "value": "chunked"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 26 Oct 2026 11:03:20 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "close"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Invalid request body. Check the JSON format and values.\",\n  \"timestamp\": \"2026-10-26T16:33:20.1287125\"\n}"
+            },
+            {
+              "name": "Product ID does not exist",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"quantityAvailable\": 30\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/products/:productId/quantity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "products",
+                    ":productId",
+                    "quantity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "productId",
+                      "value": "12"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Transfer-Encoding",
+                  "value": "chunked"
+                },
+                {
+                  "key": "Date",
+                  "value": "Mon, 26 Oct 2026 11:04:13 GMT"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=60"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"message\": \"Product not found with id: 12\",\n  \"timestamp\": \"2026-10-26T16:34:13.428533\"\n}"
+            }
+          ]
         }
       ],
       "description": "Manage product information."
@@ -1832,1006 +2099,6 @@
           ]
         },
         {
-          "name": "Update order status",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-              "options": {
-                "raw": {
-                  "headerFamily": "json",
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders/:orderId/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders",
-                ":orderId",
-                "status"
-              ],
-              "variable": [
-                {
-                  "key": "orderId",
-                  "value": "101",
-                  "description": "Unique ID of the order."
-                }
-              ]
-            },
-            "description": "Updates the order status according to permitted transitions: DRAFT to CONFIRMED or CANCELLED; CONFIRMED to FULFILLED or CANCELLED. Confirmation requires all products to be active and sufficient stock for every order item. Stock deduction and status change occur atomically. If confirmation fails, the order remains DRAFT and stock remains unchanged. Cancelling a DRAFT order does not change stock. Cancelling a CONFIRMED order restores the previously deducted stock transactionally. FULFILLED and CANCELLED are terminal states.\n"
-          },
-          "response": [
-            {
-              "name": "Order status updated successfully.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"id\": 101,\n  \"customerId\": 1,\n  \"orderDateTime\": \"2026-10-12T14:30:00+05:30\",\n  \"totalAmount\": 159800,\n  \"status\": \"CANCELLED\",\n  \"items\": [\n    {\n      \"id\": 501,\n      \"productId\": 2,\n      \"productName\": \"iPhone 17\",\n      \"quantity\": 2,\n      \"unitPrice\": 79900\n    },\n    {\n      \"id\": 501,\n      \"productId\": 2,\n      \"productName\": \"iPhone 17\",\n      \"quantity\": 2,\n      \"unitPrice\": 79900\n    }\n  ]\n}"
-            },
-            {
-              "name": "Invalid request, parameter, or validation failure.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "The requested resource was not found.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"message\": \"Resource not found.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "The requested status transition is not permitted, a product is inactive, stock is insufficient, or the operation conflicts with another business rule.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Conflict",
-              "code": 409,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "An unexpected server error occurred.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/status",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "status"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Internal Server Error",
-              "code": 500,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Add an item to an order",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-              "options": {
-                "raw": {
-                  "headerFamily": "json",
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders/:orderId/items",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders",
-                ":orderId",
-                "items"
-              ],
-              "variable": [
-                {
-                  "key": "orderId",
-                  "value": "101",
-                  "description": "Unique ID of the order."
-                }
-              ]
-            },
-            "description": "Adds an item to an existing DRAFT order. The order and product must exist, the product must be active, and the quantity must be positive. The server captures the current product price and recalculates the order total. Inventory is not deducted during draft modification.\n"
-          },
-          "response": [
-            {
-              "name": "Order item added successfully.",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"id\": 501,\n  \"productId\": 2,\n  \"productName\": \"iPhone 17\",\n  \"quantity\": 2,\n  \"unitPrice\": 79900\n}"
-            },
-            {
-              "name": "Invalid request, parameter, or validation failure.",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "Order or product was not found.",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "The order is not editable or another business rule prevents modification.",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Conflict",
-              "code": 409,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "An unexpected server error occurred.",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"productId\": 3,\n  \"quantity\": 1\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    }
-                  ]
-                }
-              },
-              "status": "Internal Server Error",
-              "code": 500,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Update an item quantity in an order",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"quantity\": 3\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId/quantity",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "orders",
-                ":orderId",
-                "items",
-                ":orderItemId",
-                "quantity"
-              ],
-              "variable": [
-                {
-                  "key": "orderId",
-                  "value": "7"
-                },
-                {
-                  "key": "orderItemId",
-                  "value": "14"
-                }
-              ]
-            },
-            "description": "Updates the quantity of an existing item in a DRAFT order. The item must belong to the specified order, and the new quantity must be positive. The original unit price is preserved, and the order total is recalculated. Inventory is not changed.\n"
-          },
-          "response": [
-            {
-              "name": "Order item updated successfully.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"quantity\": 3\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items",
-                    ":orderItemId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    },
-                    {
-                      "key": "orderItemId",
-                      "value": "501",
-                      "description": "Unique ID of the item within the specified order."
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"id\": 501,\n  \"productId\": 2,\n  \"productName\": \"iPhone 17\",\n  \"quantity\": 2,\n  \"unitPrice\": 79900\n}"
-            },
-            {
-              "name": "Invalid request, parameter, or validation failure.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"quantity\": 3\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items",
-                    ":orderItemId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    },
-                    {
-                      "key": "orderItemId",
-                      "value": "501",
-                      "description": "Unique ID of the item within the specified order."
-                    }
-                  ]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "The requested resource was not found.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"quantity\": 3\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items",
-                    ":orderItemId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    },
-                    {
-                      "key": "orderItemId",
-                      "value": "501",
-                      "description": "Unique ID of the item within the specified order."
-                    }
-                  ]
-                }
-              },
-              "status": "Not Found",
-              "code": 404,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 404,\n  \"error\": \"Not Found\",\n  \"message\": \"Resource not found.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "The order is not editable or another business rule prevents modification.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"quantity\": 3\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items",
-                    ":orderItemId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    },
-                    {
-                      "key": "orderItemId",
-                      "value": "501",
-                      "description": "Unique ID of the item within the specified order."
-                    }
-                  ]
-                }
-              },
-              "status": "Conflict",
-              "code": 409,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "An unexpected server error occurred.",
-              "originalRequest": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"quantity\": 3\n}",
-                  "options": {
-                    "raw": {
-                      "headerFamily": "json",
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/orders/:orderId/items/:orderItemId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "orders",
-                    ":orderId",
-                    "items",
-                    ":orderItemId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "orderId",
-                      "value": "101",
-                      "description": "Unique ID of the order."
-                    },
-                    {
-                      "key": "orderItemId",
-                      "value": "501",
-                      "description": "Unique ID of the item within the specified order."
-                    }
-                  ]
-                }
-              },
-              "status": "Internal Server Error",
-              "code": 500,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            }
-          ]
-        },
-        {
           "name": "Remove an item from an order",
           "request": {
             "method": "DELETE",
@@ -3094,192 +2361,6 @@
               "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
             }
           ]
-        }
-      ],
-      "description": "Create and manage customer orders, including their items."
-    },
-    {
-      "name": "Order Items",
-      "item": [
-        {
-          "name": "Get order items",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/order-items?page=0&size=10&orderId=101",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "order-items"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "10"
-                },
-                {
-                  "description": "Filter items by order ID.",
-                  "key": "orderId",
-                  "value": "101"
-                }
-              ]
-            },
-            "description": "Returns a paginated list of order items."
-          },
-          "response": [
-            {
-              "name": "Order items retrieved successfully.",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/order-items?page=0&size=10&orderId=101",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "order-items"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "0"
-                    },
-                    {
-                      "key": "size",
-                      "value": "10"
-                    },
-                    {
-                      "description": "Filter items by order ID.",
-                      "key": "orderId",
-                      "value": "101"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"content\": [\n    {\n      \"id\": 501,\n      \"productId\": 2,\n      \"productName\": \"iPhone 17\",\n      \"quantity\": 2,\n      \"unitPrice\": 79900\n    },\n    {\n      \"id\": 501,\n      \"productId\": 2,\n      \"productName\": \"iPhone 17\",\n      \"quantity\": 2,\n      \"unitPrice\": 79900\n    }\n  ],\n  \"page\": 0,\n  \"size\": 10,\n  \"totalElements\": 1,\n  \"totalPages\": 1,\n  \"first\": true,\n  \"last\": true\n}"
-            },
-            {
-              "name": "Invalid request, parameter, or validation failure.",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/order-items?page=0&size=10&orderId=101",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "order-items"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "0"
-                    },
-                    {
-                      "key": "size",
-                      "value": "10"
-                    },
-                    {
-                      "description": "Filter items by order ID.",
-                      "key": "orderId",
-                      "value": "101"
-                    }
-                  ]
-                }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 400,\n  \"error\": \"Bad Request\",\n  \"message\": \"Request validation failed.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            },
-            {
-              "name": "An unexpected server error occurred.",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/order-items?page=0&size=10&orderId=101",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "order-items"
-                  ],
-                  "query": [
-                    {
-                      "key": "page",
-                      "value": "0"
-                    },
-                    {
-                      "key": "size",
-                      "value": "10"
-                    },
-                    {
-                      "description": "Filter items by order ID.",
-                      "key": "orderId",
-                      "value": "101"
-                    }
-                  ]
-                }
-              },
-              "status": "Internal Server Error",
-              "code": 500,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "cookie": [],
-              "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
-            }
-          ]
         },
         {
           "name": "Get an order item by ID",
@@ -3292,19 +2373,19 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/order-items/:orderItemId",
+              "raw": "{{baseUrl}}/orders/items/:orderItemId",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "order-items",
+                "orders",
+                "items",
                 ":orderItemId"
               ],
               "variable": [
                 {
                   "key": "orderItemId",
-                  "value": "9",
-                  "description": "Unique ID of the order item."
+                  "value": "2"
                 }
               ]
             }
@@ -3471,9 +2552,161 @@
               "body": "{\n  \"status\": 500,\n  \"error\": \"Internal Server Error\",\n  \"message\": \"An unexpected error occurred.\",\n  \"timestamp\": \"2026-10-12T14:30:00+05:30\"\n}"
             }
           ]
+        },
+        {
+          "name": "Update Order (Status and Items)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"items\": []\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                ":orderId"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "61"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Successful updation",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"status\": \"DRAFT\",\r\n  \"items\": [\r\n    {\r\n      \"id\": null,\r\n      \"productId\": 2,    \r\n      \"quantity\": 2\r\n    },\r\n\r\n    {\r\n      \"id\": 78,\r\n      \"productId\": 2,\r\n      \"quantity\": 3\r\n    }\r\n  ]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/orders/:orderId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    ":orderId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderId",
+                      "value": "55"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Transfer-Encoding",
+                  "value": "chunked"
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 29 Oct 2026 09:17:15 GMT"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=60"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 55,\n  \"customerId\": 24,\n  \"orderDateTime\": \"2026-10-21T14:41:31.788091\",\n  \"totalAmount\": 1999980,\n  \"status\": \"DRAFT\",\n  \"items\": [\n    {\n      \"id\": 62,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 3,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 78,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 3,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 79,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 80,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 81,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 82,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 83,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 84,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    },\n    {\n      \"id\": 85,\n      \"productId\": 2,\n      \"productName\": \"MacBook Air M4\",\n      \"quantity\": 2,\n      \"unitPrice\": 99999\n    }\n  ]\n}"
+            },
+            {
+              "name": "Business Conflict",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"status\": \"CONFIRMED\",\r\n  \"items\": [\r\n    {\r\n      \"id\": null,\r\n      \"productId\": 2,    \r\n      \"quantity\": 2\r\n    },\r\n\r\n    {\r\n      \"id\": 78,\r\n      \"productId\": 2,\r\n      \"quantity\": 3\r\n    }\r\n  ]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/orders/:orderId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders",
+                    ":orderId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "orderId",
+                      "value": "55"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Transfer-Encoding",
+                  "value": "chunked"
+                },
+                {
+                  "key": "Date",
+                  "value": "Thu, 29 Oct 2026 09:19:32 GMT"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=60"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": 409,\n  \"error\": \"Conflict\",\n  \"message\": \"Items can only be modified in draft orders.\",\n  \"timestamp\": \"2026-10-29T14:49:32.6100109\"\n}"
+            }
+          ]
         }
       ],
-      "description": "Read order item information."
+      "description": "Create and manage customer orders, including their items."
     }
   ],
   "variable": [

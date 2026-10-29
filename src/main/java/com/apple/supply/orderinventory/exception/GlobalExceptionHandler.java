@@ -74,7 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(
             BusinessConflictException ex) {
-
+        log.warn("Business conflict: {}", ex.getMessage());
         return buildResponse(
                 HttpStatus.CONFLICT,
                 ex.getMessage()
@@ -120,7 +120,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CustomerNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCustomerNotFound(
             CustomerNotFoundException ex) {
-
+        log.warn("Customer not found: {}", ex.getMessage());
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 ex.getMessage()
@@ -130,6 +130,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleProductNotFound(
             ProductNotFoundException ex) {
+        log.warn("Product not found: {}", ex.getMessage());
 
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
@@ -137,6 +138,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OrderNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleOrderNotFound(
             OrderNotFoundException ex) {
+        log.warn("Order not found: {}", ex.getMessage());
 
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
@@ -144,6 +146,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OrderItemNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleOrderItemNotFound(
             OrderItemNotFoundException ex) {
+        log.warn("OrderItem not found: {}", ex.getMessage());
 
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }

@@ -16,19 +16,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import com.apple.supply.orderinventory.dto.OrderPageResponse;
 import com.apple.supply.orderinventory.dto.OrderSummaryResponse;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.apple.supply.orderinventory.dto.OrderResponse;
 import com.apple.supply.orderinventory.dto.OrderItemResponse;
-import com.apple.supply.orderinventory.dto.UpdateOrderStatusRequest;
-import java.util.List;
+import com.apple.supply.orderinventory.dto.UpdateOrderRequest;
+import com.apple.supply.orderinventory.dto.UpdateOrderItemRequest;
+
+import java.util.*;
 
 @Slf4j
 @Service
@@ -46,7 +46,7 @@ public class OrderService {
         log.info("Creating draft order for customer ID: {}",
                 request.getCustomerId());
 
-        // 1. Find the customer in the database.
+        // 1. Find the customer.
         Customer customer = customerRepository
                 .findById(request.getCustomerId())
                 .orElseThrow(() ->
@@ -54,33 +54,42 @@ public class OrderService {
                                 "Customer not found: "
                                         + request.getCustomerId()));
 
-        // 2. Create a new order.
+        // 2. Create a new draft order.
         Order order = new Order();
         order.setCustomer(customer);
         order.setOrderDateTime(LocalDateTime.now());
         order.setStatus(OrderStatus.DRAFT);
 
-        // 4. Process each requested order item.
-        for (CreateOrderItemRequest itemRequest
-                : request.getItems()) {
+        // 3. Track order items by product ID to avoid duplicates.
+        Map<Long, OrderItem> itemsByProductId = new HashMap<>();
 
-            Product product = productRepository
-                    .findById(itemRequest.getProductId())
+        // 4. Process each requested item.
+        for (CreateOrderItemRequest itemRequest : request.getItems()) {
+
+            // Validate quantity.
+            if (itemRequest.getQuantity() == null
+                    || itemRequest.getQuantity() <= 0) {
+                throw new IllegalArgumentException(
+                        "Quantity must be greater than zero.");
+            }
+
+            Long productId = itemRequest.getProductId();
+
+            if (productId == null) {
+                throw new IllegalArgumentException(
+                        "Product ID is required.");
+            }
+
+            // Find the product.
+            Product product = productRepository.findById(productId)
                     .orElseThrow(() ->
                             new ProductNotFoundException(
-                                    "Product not found: "
-                                            + itemRequest.getProductId()));
+                                    "Product not found: " + productId));
 
             // Only active products can be ordered.
             if (!product.isActive()) {
-                throw new IllegalArgumentException(
+                throw new BusinessConflictException(
                         "Product is inactive: " + product.getId());
-            }
-
-            // Quantity must be positive.
-            if (itemRequest.getQuantity() <= 0) {
-                throw new IllegalArgumentException(
-                        "Quantity must be greater than zero.");
             }
 
             // Capture the product's current price.
@@ -91,24 +100,41 @@ public class OrderService {
                         "Product has no unit price: " + product.getId());
             }
 
-            // Create the order item.
-            OrderItem orderItem = new OrderItem();
-            orderItem.setProduct(product);
-            orderItem.setQuantity(itemRequest.getQuantity());
-            orderItem.setUnitPrice(unitPrice);
+            // Check whether this product already has an order item.
+            OrderItem existingItem = itemsByProductId.get(productId);
 
-            // Maintain both sides of the relationship.
-            order.addOrderItem(orderItem);
+            if (existingItem != null) {
+
+                // Same product: add to the existing quantity.
+                existingItem.setQuantity(
+                        Math.addExact(
+                                existingItem.getQuantity(),
+                                itemRequest.getQuantity()));
+
+            } else {
+
+                // New product: create one order item.
+                OrderItem orderItem = new OrderItem();
+                orderItem.setProduct(product);
+                orderItem.setQuantity(itemRequest.getQuantity());
+                orderItem.setUnitPrice(unitPrice);
+
+                // Maintain both sides of the relationship.
+                order.addOrderItem(orderItem);
+
+                // Remember this item for subsequent duplicate products.
+                itemsByProductId.put(productId, orderItem);
+            }
         }
 
-        // 5. Store the calculated total.
+        // 5. Calculate the order total.
         recalculateOrderTotal(order);
 
         // 6. Save the order and its items.
-        // The configured PERSIST cascade saves the new items.
         Order savedOrder = orderRepository.save(order);
 
-        log.info("Draft order created successfully. Order ID: {}, Customer ID: {}",
+        log.info(
+                "Draft order created successfully. Order ID: {}, Customer ID: {}",
                 savedOrder.getId(),
                 request.getCustomerId());
 
@@ -204,73 +230,89 @@ public class OrderService {
         );
     }
 
-    @Transactional
-    public OrderResponse updateOrderStatus(
-            Long orderId,
-            UpdateOrderStatusRequest request) {
 
-        log.info("Updating status for order ID: {} to status: {}",
-                orderId, request.getStatus());
-
-        Order order = findOrderById(orderId);
+    private void applyOrderStatus(
+            Order order,
+            OrderStatus requestedStatus) {
 
         OrderStatus currentStatus = order.getStatus();
-        OrderStatus requestedStatus = request.getStatus();
-
-        if (requestedStatus == null) {
-            throw new IllegalArgumentException(
-                    "Status is required.");
-        }
 
         if (currentStatus == requestedStatus) {
-            throw new BusinessConflictException(
-                    "Order is already in status " + currentStatus);
+            return;
         }
 
         if (currentStatus == OrderStatus.DRAFT
                 && requestedStatus == OrderStatus.CONFIRMED) {
 
-            // Lock products in a consistent order to reduce deadlock risk.
-            var items = order.getOrderItems().stream()
-                    .sorted((a, b) -> Long.compare(
-                            a.getProduct().getId(),
-                            b.getProduct().getId()))
-                    .toList();
+            // Step 1: An order must contain at least one item.
+            if (order.getOrderItems().isEmpty()) {
+                throw new BusinessConflictException(
+                        "Cannot confirm an order without items.");
+            }
 
-            // First validate all items before changing any stock.
-            for (OrderItem item : items) {
+            // Step 2: Aggregate quantities by product ID.
+            // TreeMap keeps product IDs sorted to reduce deadlock risk.
+            Map<Long, Integer> requiredQuantities = new TreeMap<>();
+
+            for (OrderItem item : order.getOrderItems()) {
+
+                Long productId = item.getProduct().getId();
+
+                requiredQuantities.merge(
+                        productId,
+                        item.getQuantity(),
+                        (existingQuantity, newQuantity) ->
+                                Math.addExact(existingQuantity, newQuantity)
+                );
+            }
+
+            // Step 3: Lock each unique product and validate its stock.
+            Map<Long, Product> lockedProducts = new TreeMap<>();
+
+            for (Map.Entry<Long, Integer> entry
+                    : requiredQuantities.entrySet()) {
+
+                Long productId = entry.getKey();
+                Integer requiredQuantity = entry.getValue();
+
                 Product product = productRepository
-                        .findByIdForUpdate(item.getProduct().getId())
+                        .findByIdForUpdate(productId)
                         .orElseThrow(() -> new ProductNotFoundException(
-                                "Product not found: "
-                                        + item.getProduct().getId()));
+                                "Product not found: " + productId));
 
                 if (!product.isActive()) {
                     throw new BusinessConflictException(
-                            "Product is inactive: " + product.getId());
+                            "Product is inactive: " + productId);
                 }
 
-                if (product.getQuantityAvailable() < item.getQuantity()) {
+                if (product.getQuantityAvailable() < requiredQuantity) {
                     throw new BusinessConflictException(
-                            "Insufficient stock for product: "
-                                    + product.getId());
+                            "Insufficient stock for product: " + productId
+                                    + ". Required: " + requiredQuantity
+                                    + ", Available: "
+                                    + product.getQuantityAvailable());
                 }
+
+                // Keep the locked entity for the deduction step.
+                lockedProducts.put(productId, product);
             }
 
-            // All items passed validation. Deduct stock.
-            for (OrderItem item : items) {
-                Product product = productRepository
-                        .findByIdForUpdate(item.getProduct().getId())
-                        .orElseThrow(() -> new ProductNotFoundException(
-                                "Product not found: "
-                                        + item.getProduct().getId()));
+            // Step 4: Deduct stock only after every product passes validation.
+            for (Map.Entry<Long, Integer> entry
+                    : requiredQuantities.entrySet()) {
+
+                Long productId = entry.getKey();
+                Integer requiredQuantity = entry.getValue();
+
+                Product product = lockedProducts.get(productId);
 
                 product.setQuantityAvailable(
-                        product.getQuantityAvailable() - item.getQuantity());
+                        product.getQuantityAvailable() - requiredQuantity);
 
                 productRepository.save(product);
             }
 
+            // Step 5: Update the order status.
             order.setStatus(OrderStatus.CONFIRMED);
 
         } else if (currentStatus == OrderStatus.DRAFT
@@ -281,7 +323,6 @@ public class OrderService {
         } else if (currentStatus == OrderStatus.CONFIRMED
                 && requestedStatus == OrderStatus.FULFILLED) {
 
-            // Stock was already deducted during confirmation.
             order.setStatus(OrderStatus.FULFILLED);
 
         } else if (currentStatus == OrderStatus.CONFIRMED
@@ -318,157 +359,7 @@ public class OrderService {
 
         log.info("Order ID: {} status updated successfully to {}",
                 order.getId(), order.getStatus());
-
-        // Build the response inside the transaction.
-        var items = order.getOrderItems().stream()
-                .map(this::toOrderItemResponse)
-                .toList();
-
-        return new OrderResponse(
-                order.getId(),
-                order.getCustomer().getId(),
-                order.getOrderDateTime(),
-                order.getTotalAmount(),
-                order.getStatus(),
-                items);
     }
-
-
-
-    @Transactional
-    public OrderItemResponse addOrderItem(
-            Long orderId,
-            CreateOrderItemRequest request) {
-
-        log.info("Adding item to order ID: {}", orderId);
-
-        // 1. Find the existing order.
-        Order order = findOrderById(orderId);
-
-        // 2. Only draft orders can be modified.
-        if (order.getStatus() != OrderStatus.DRAFT) {
-            throw new BusinessConflictException(
-                    "Items can only be added to draft orders.");
-        }
-
-        // 3. Validate the requested quantity.
-        if (request.getQuantity() == null
-                || request.getQuantity() <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity must be greater than zero.");
-        }
-
-        // 4. Find the requested product.
-        Product product = productRepository
-                .findById(request.getProductId())
-                .orElseThrow(() -> new ProductNotFoundException(
-                        "Product not found with ID: "
-                                + request.getProductId()));
-
-        // 5. Only active products can be ordered.
-        if (!product.isActive()) {
-            throw new BusinessConflictException(
-                    "Product is inactive: " + product.getId());
-        }
-
-        // 6. Check whether this product already exists
-        //    in the current order.
-        OrderItem item = order.getOrderItems().stream()
-                .filter(existingItem ->
-                        existingItem.getProduct().getId()
-                                .equals(product.getId()))
-                .findFirst()
-                .orElse(null);
-
-        if (item != null) {
-
-            // Product already exists: update its quantity.
-            // Preserve its original unit price.
-            item.setQuantity(request.getQuantity());
-
-        } else {
-
-            // Product does not exist in this order:
-            // create a new order item.
-            BigDecimal unitPrice = product.getUnitPrice();
-
-            if (unitPrice == null) {
-                throw new IllegalArgumentException(
-                        "Product has no unit price: "
-                                + product.getId());
-            }
-
-            item = new OrderItem();
-            item.setProduct(product);
-            item.setQuantity(request.getQuantity());
-            item.setUnitPrice(unitPrice);
-
-            // Maintain both sides of the relationship.
-            order.addOrderItem(item);
-
-            // Explicitly saving the new item and retaining the saved entity.
-            item = orderItemRepository.saveAndFlush(item);
-        }
-
-        // 7. Recalculate the order total.
-        recalculateOrderTotal(order);
-
-        // 8. Save the order and its changes.
-        orderRepository.save(order);
-
-        log.info("Order item added successfully. Item ID: {}, Order ID: {}, Product ID: {}",
-                item.getId(),
-                orderId,
-                item.getProduct().getId());
-
-        // 9. Return the added or updated order item.
-        return toOrderItemResponse(item);
-    }
-
-
-    @Transactional
-    public OrderItemResponse updateOrderItemQuantity(
-            Long orderId,
-            Long itemId,
-            Integer quantity) {
-        log.info("Updating quantity for order item ID: {} in order ID: {}",
-                itemId, orderId);
-
-        // 1. Validate the requested quantity.
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException(
-                    "Quantity must be greater than zero.");
-        }
-
-        // 2. Find the order.
-        Order order = findOrderById(orderId);
-
-        // 3. Only draft orders can be modified.
-        if (order.getStatus() != OrderStatus.DRAFT) {
-            throw new BusinessConflictException(
-                    "Items can only be modified in draft orders.");
-        }
-
-        // 4. Find the item within this order.
-        OrderItem item = findOrderItemById(order, itemId);
-
-        // 5. Update only the quantity.
-        // Preserve the original unit price.
-        item.setQuantity(quantity);
-
-        // 6. Recalculate the order total.
-        recalculateOrderTotal(order);
-
-        // 7. Save the order and its updated item.
-        orderRepository.save(order);
-
-        log.info("Order item quantity updated successfully. Item ID: {}, New quantity: {}",
-                itemId, item.getQuantity());
-
-        // 8. Return the updated item.
-        return toOrderItemResponse(item);
-    }
-
 
 
     @Transactional
@@ -557,6 +448,221 @@ public class OrderService {
         return toOrderItemResponse(item);
     }
 
+    /*Same product, different quantities: the quantities are added together
+     Existing item ID: updates that item's quantity; its product cannot be changed.
+     Omitted existing item ID: removes that persisted item from the order.
+      New item with id: null: merges into the existing product item if present; otherwise creates one.
+       Status update: runs after item changes, so confirmation uses the updated quantities.
+        Empty items list: retains our current behavior of skipping item processing.*/
+    /*
+     * Test cases:
+     *
+     * 1. {"status": "CONFIRMED"}
+     *    -> Status update proceeds through the existing confirmation
+     *       and stock-validation logic.
+     *
+     * 2. {"items": null}
+     *    -> Existing order items remain unchanged.
+     *
+     * 3. {"items": [...]}
+     *    -> Existing item-update logic runs.
+     *
+     * 4. {}
+     *    -> No changes are requested.
+     *
+     * 5. {"items": []}
+     *    -> Reject the request with 409 Conflict because an order
+     *       must contain at least one item.
+     */
+    @Transactional
+    public OrderResponse updateOrder(
+            Long orderId,
+            UpdateOrderRequest request) {
+
+        log.info("Processing combined order update for order ID: {}", orderId);
+
+        // 1. Find the existing order.
+        Order order = findOrderById(orderId);
+
+        // Reject an explicitly empty item list.
+        if (request.getItems() != null
+                && request.getItems().isEmpty()) {
+
+            throw new BusinessConflictException(
+                    "Order items cannot be empty. "
+                            + "An order must contain at least one item.");
+        }
+
+        // 2. Reject duplicate existing order item IDs.
+        if (request.getItems() != null) {
+            Set<Long> itemIds = new HashSet<>();
+
+            for (UpdateOrderItemRequest item : request.getItems()) {
+                if (item.getId() != null
+                        && !itemIds.add(item.getId())) {
+                    throw new IllegalArgumentException(
+                            "Duplicate order item ID: " + item.getId());
+                }
+            }
+        }
+
+        // 3. Process item changes before changing the order status.
+        if (request.getItems() != null && !request.getItems().isEmpty()) {
+
+            if (order.getStatus() != OrderStatus.DRAFT) {
+                throw new BusinessConflictException(
+                        "Items can only be modified in draft orders.");
+            }
+
+            Set<Long> requestedItemIds = new HashSet<>();
+            Map<Long, OrderItem> itemsByProductId = new HashMap<>();
+
+            // 4. Process existing items first.
+            for (UpdateOrderItemRequest itemRequest : request.getItems()) {
+
+                if (itemRequest.getQuantity() == null
+                        || itemRequest.getQuantity() <= 0) {
+                    throw new IllegalArgumentException(
+                            "Quantity must be greater than zero.");
+                }
+
+                if (itemRequest.getProductId() == null) {
+                    throw new IllegalArgumentException(
+                            "Product ID is required.");
+                }
+
+                if (itemRequest.getId() == null) {
+                    continue;
+                }
+
+                OrderItem existingItem = findOrderItemById(
+                        order, itemRequest.getId());
+
+                if (!existingItem.getProduct().getId()
+                        .equals(itemRequest.getProductId())) {
+                    throw new IllegalArgumentException(
+                            "Product ID cannot be changed for an existing "
+                                    + "order item.");
+                }
+
+                requestedItemIds.add(itemRequest.getId());
+
+                Long productId = itemRequest.getProductId();
+                OrderItem retainedItem = itemsByProductId.get(productId);
+
+                if (retainedItem == null) {
+
+                    // First existing item for this product.
+                    existingItem.setQuantity(itemRequest.getQuantity());
+                    itemsByProductId.put(productId, existingItem);
+
+                } else {
+
+                    // Another existing item represents the same product.
+                    retainedItem.setQuantity(
+                            Math.addExact(
+                                    retainedItem.getQuantity(),
+                                    itemRequest.getQuantity()));
+
+                    order.removeOrderItem(existingItem);
+                }
+            }
+
+            // 5. Remove persisted items omitted from the request.
+            List<OrderItem> itemsToRemove = order.getOrderItems().stream()
+                    .filter(item -> item.getId() != null)
+                    .filter(item -> !requestedItemIds.contains(item.getId()))
+                    .toList();
+
+            for (OrderItem item : itemsToRemove) {
+                order.removeOrderItem(item);
+            }
+
+            // 6. Process new items and merge duplicate products.
+            for (UpdateOrderItemRequest itemRequest : request.getItems()) {
+
+                if (itemRequest.getId() != null) {
+                    continue;
+                }
+
+                // Validate new-item fields as well.
+                if (itemRequest.getQuantity() == null
+                        || itemRequest.getQuantity() <= 0) {
+                    throw new IllegalArgumentException(
+                            "Quantity must be greater than zero.");
+                }
+
+                if (itemRequest.getProductId() == null) {
+                    throw new IllegalArgumentException(
+                            "Product ID is required.");
+                }
+
+                Long productId = itemRequest.getProductId();
+
+                Product product = productRepository.findById(productId)
+                        .orElseThrow(() -> new ProductNotFoundException(
+                                "Product not found with ID: " + productId));
+
+                if (!product.isActive()) {
+                    throw new BusinessConflictException(
+                            "Product is inactive: " + product.getId());
+                }
+
+                BigDecimal unitPrice = product.getUnitPrice();
+
+                if (unitPrice == null) {
+                    throw new IllegalArgumentException(
+                            "Product has no unit price: " + product.getId());
+                }
+
+                OrderItem retainedItem = itemsByProductId.get(productId);
+
+                if (retainedItem != null) {
+
+                    // Same product already exists: combine quantities.
+                    retainedItem.setQuantity(
+                            Math.addExact(
+                                    retainedItem.getQuantity(),
+                                    itemRequest.getQuantity()));
+
+                } else {
+
+                    // Product not yet in the order: create a new item.
+                    OrderItem newItem = new OrderItem();
+                    newItem.setProduct(product);
+                    newItem.setQuantity(itemRequest.getQuantity());
+                    newItem.setUnitPrice(unitPrice);
+
+                    order.addOrderItem(newItem);
+                    itemsByProductId.put(productId, newItem);
+                }
+            }
+
+            // 7. Recalculate the order total.
+            recalculateOrderTotal(order);
+        }
+
+        // 8. Apply status changes after item changes.
+        if (request.getStatus() != null
+                && request.getStatus() != order.getStatus()) {
+            applyOrderStatus(order, request.getStatus());
+        }
+
+        // 9. Save and return the updated order.
+        Order savedOrder = orderRepository.save(order);
+
+        var items = savedOrder.getOrderItems().stream()
+                .map(this::toOrderItemResponse)
+                .toList();
+
+        return new OrderResponse(
+                savedOrder.getId(),
+                savedOrder.getCustomer().getId(),
+                savedOrder.getOrderDateTime(),
+                savedOrder.getTotalAmount(),
+                savedOrder.getStatus(),
+                items);
+    }
 
     // Created Helper method to calculate the order Total
     private void recalculateOrderTotal(Order order) {

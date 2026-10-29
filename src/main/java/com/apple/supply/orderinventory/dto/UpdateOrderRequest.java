@@ -1,14 +1,18 @@
 package com.apple.supply.orderinventory.dto;
 
 import com.apple.supply.orderinventory.model.OrderStatus;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
-public class UpdateOrderStatusRequest {
+public class UpdateOrderRequest {
 
-    @NotNull(message = "Status is required")
     private OrderStatus status;
+
+    @Valid
+    private List<UpdateOrderItemRequest> items;
 }
