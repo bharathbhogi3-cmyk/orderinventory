@@ -54,6 +54,13 @@ public class OrderService {
                                 "Customer not found: "
                                         + request.getCustomerId()));
 
+        // Validate order items.
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Order must contain at least one item."
+            );
+        }
+
         // 2. Create a new draft order.
         Order order = new Order();
         order.setCustomer(customer);

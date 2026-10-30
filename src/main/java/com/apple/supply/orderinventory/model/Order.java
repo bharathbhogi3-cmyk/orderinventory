@@ -1,9 +1,6 @@
 
 package com.apple.supply.orderinventory.model;
 
-import com.apple.supply.orderinventory.model.Customer;
-import com.apple.supply.orderinventory.model.OrderItem;
-import com.apple.supply.orderinventory.model.OrderStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
