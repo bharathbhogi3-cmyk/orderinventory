@@ -8,14 +8,17 @@ import com.apple.supply.orderinventory.exception.BusinessConflictException;
 import com.apple.supply.orderinventory.exception.ProductNotFoundException;
 import com.apple.supply.orderinventory.model.Product;
 import com.apple.supply.orderinventory.repository.ProductRepository;
+import com.apple.supply.orderinventory.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
@@ -62,41 +65,48 @@ public class ProductService {
         return toResponse(savedProduct);
     }
 
+
     @Transactional(readOnly = true)
     public Page<ProductResponse> getAllProducts(
             int page,
             int size,
+            String name,
             String category,
-            Boolean active) {
+            String brand,
+            String color,
+            Boolean active,
+            BigDecimal minPrice,
+            BigDecimal maxPrice) {
 
         log.info(
-                "Fetching products. Page: {}, Size: {}, Category: {}, Active: {}",
-                page, size, category, active);
+                "Fetching products. Page: {}, Size: {}, Name: {}, Category: {}, Brand: {}, Color: {}, Active: {}, MinPrice: {}, MaxPrice: {}",
+                page, size, name, category, brand, color, active, minPrice, maxPrice
+        );
 
         Pageable pageable = PageRequest.of(page, size);
 
-        Page<Product> products;
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        name,
+                        category,
+                        brand,
+                        color,
+                        active,
+                        minPrice,
+                        maxPrice
+                );
 
-        boolean hasCategory =
-                category != null && !category.isBlank();
+        Page<Product> products =
+                productRepository.findAll(specification, pageable);
 
-        if (hasCategory && active != null) {
-            products = productRepository.findByCategoryAndActive(
-                    category, active, pageable);
-        } else if (hasCategory) {
-            products = productRepository.findByCategory(
-                    category, pageable);
-        } else if (active != null) {
-            products = productRepository.findByActive(
-                    active, pageable);
-        } else {
-            products = productRepository.findAll(pageable);
-        }
+        log.info(
+                "Successfully retrieved {} products",
+                products.getTotalElements()
+        );
 
-        log.info("Successfully retrieved {} products",
-                products.getTotalElements());
         return products.map(this::toResponse);
     }
+
 
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long productId) {

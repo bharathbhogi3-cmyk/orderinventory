@@ -1,6 +1,7 @@
 package com.apple.supply.orderinventory.repository;
 
 import com.apple.supply.orderinventory.model.Product;
+import com.apple.supply.orderinventory.specification.ProductSpecification;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -195,8 +198,9 @@ class ProductRepositoryTest {
         verify(productRepository, times(1)).findAll();
     }
 
+
     @Test
-    void findByCategory_shouldReturnProductsForCategory() {
+    void findAll_shouldReturnProductsForCategory() {
 
         // Arrange
         Product product = new Product();
@@ -207,26 +211,35 @@ class ProductRepositoryTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        null, "Laptop", null, null,
+                        null, null, null
+                );
+
         Page<Product> expectedPage =
                 new PageImpl<>(java.util.List.of(product));
 
-        when(productRepository.findByCategory("Laptop", pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Product> result =
-                productRepository.findByCategory("Laptop", pageable);
+                productRepository.findAll(specification, pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
-        assertEquals("Laptop", result.getContent().get(0).getCategory());
+        assertEquals("Laptop",
+                result.getContent().get(0).getCategory());
 
         verify(productRepository, times(1))
-                .findByCategory("Laptop", pageable);
+                .findAll(specification, pageable);
     }
 
+
     @Test
-    void findByActive_shouldReturnActiveProducts() {
+    void findAll_shouldReturnActiveProducts() {
 
         // Arrange
         Product product = new Product();
@@ -237,26 +250,34 @@ class ProductRepositoryTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        null, null, null, null,
+                        true, null, null
+                );
+
         Page<Product> expectedPage =
                 new PageImpl<>(java.util.List.of(product));
 
-        when(productRepository.findByActive(true, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Product> result =
-                productRepository.findByActive(true, pageable);
+                productRepository.findAll(specification, pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
         assertTrue(result.getContent().get(0).isActive());
 
         verify(productRepository, times(1))
-                .findByActive(true, pageable);
+                .findAll(specification, pageable);
     }
 
+
     @Test
-    void findByActive_shouldReturnInactiveProducts() {
+    void findAll_shouldReturnInactiveProducts() {
 
         // Arrange
         Product product = new Product();
@@ -267,26 +288,34 @@ class ProductRepositoryTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        null, null, null, null,
+                        false, null, null
+                );
+
         Page<Product> expectedPage =
                 new PageImpl<>(java.util.List.of(product));
 
-        when(productRepository.findByActive(false, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Product> result =
-                productRepository.findByActive(false, pageable);
+                productRepository.findAll(specification, pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
         assertFalse(result.getContent().get(0).isActive());
 
         verify(productRepository, times(1))
-                .findByActive(false, pageable);
+                .findAll(specification, pageable);
     }
 
+
     @Test
-    void findByCategoryAndActive_shouldReturnMatchingProducts() {
+    void findAll_shouldReturnMatchingProductsForCategoryAndActive() {
 
         // Arrange
         Product product = new Product();
@@ -298,17 +327,22 @@ class ProductRepositoryTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        null, "Smartphone", null, null,
+                        true, null, null
+                );
+
         Page<Product> expectedPage =
                 new PageImpl<>(java.util.List.of(product));
 
-        when(productRepository.findByCategoryAndActive(
-                "Smartphone", true, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Product> result =
-                productRepository.findByCategoryAndActive(
-                        "Smartphone", true, pageable);
+                productRepository.findAll(specification, pageable);
 
         // Assert
         assertEquals(1, result.getTotalElements());
@@ -317,26 +351,31 @@ class ProductRepositoryTest {
         assertTrue(result.getContent().get(0).isActive());
 
         verify(productRepository, times(1))
-                .findByCategoryAndActive(
-                        "Smartphone", true, pageable);
+                .findAll(specification, pageable);
     }
 
+
     @Test
-    void findByCategoryAndActive_shouldReturnEmptyPageWhenNoMatch() {
+    void findAll_shouldReturnEmptyPageWhenNoMatchingProducts() {
 
         // Arrange
         Pageable pageable = PageRequest.of(0, 10);
 
+        Specification<Product> specification =
+                ProductSpecification.withFilters(
+                        null, "Laptop", null, null,
+                        true, null, null
+                );
+
         Page<Product> expectedPage = Page.empty(pageable);
 
-        when(productRepository.findByCategoryAndActive(
-                "Laptop", true, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Product> result =
-                productRepository.findByCategoryAndActive(
-                        "Laptop", true, pageable);
+                productRepository.findAll(specification, pageable);
 
         // Assert
         assertNotNull(result);
@@ -344,9 +383,9 @@ class ProductRepositoryTest {
         assertEquals(0, result.getTotalElements());
 
         verify(productRepository, times(1))
-                .findByCategoryAndActive(
-                        "Laptop", true, pageable);
+                .findAll(specification, pageable);
     }
+
 
     @Test
     void findByIdForUpdate_shouldReturnProductWhenFound() {

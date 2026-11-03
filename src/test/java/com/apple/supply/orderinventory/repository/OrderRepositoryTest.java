@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.springframework.data.jpa.domain.Specification;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class OrderRepositoryTest {
@@ -234,22 +237,23 @@ class OrderRepositoryTest {
         Page<Order> expectedPage =
                 new PageImpl<>(List.of(order));
 
-        when(orderRepository.findOrders(
-                1L, null, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        1L, null, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
+        assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(1L,
-                result.getContent().get(0).getCustomer().getId());
+        assertEquals(1L, result.getContent().get(0).getCustomer().getId());
 
-        verify(orderRepository, times(1))
-                .findOrders(1L, null, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
 
@@ -270,22 +274,24 @@ class OrderRepositoryTest {
         Page<Order> expectedPage =
                 new PageImpl<>(List.of(order));
 
-        when(orderRepository.findOrders(
-                null, OrderStatus.CONFIRMED, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        null, OrderStatus.CONFIRMED, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
+        assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(OrderStatus.CONFIRMED,
                 result.getContent().get(0).getStatus());
 
-        verify(orderRepository, times(1))
-                .findOrders(null, OrderStatus.CONFIRMED, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
@@ -305,24 +311,25 @@ class OrderRepositoryTest {
         Page<Order> expectedPage =
                 new PageImpl<>(List.of(order));
 
-        when(orderRepository.findOrders(
-                1L, OrderStatus.FULFILLED, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        1L, OrderStatus.FULFILLED, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
+        assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(1L,
-                result.getContent().get(0).getCustomer().getId());
+        assertEquals(1L, result.getContent().get(0).getCustomer().getId());
         assertEquals(OrderStatus.FULFILLED,
                 result.getContent().get(0).getStatus());
 
-        verify(orderRepository, times(1))
-                .findOrders(1L, OrderStatus.FULFILLED, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
@@ -347,21 +354,23 @@ class OrderRepositoryTest {
         Page<Order> expectedPage =
                 new PageImpl<>(List.of(order1, order2));
 
-        when(orderRepository.findOrders(
-                null, null, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        null, null, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
+        assertNotNull(result);
         assertEquals(2, result.getTotalElements());
         assertEquals(2, result.getContent().size());
 
-        verify(orderRepository, times(1))
-                .findOrders(null, null, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
@@ -372,22 +381,23 @@ class OrderRepositoryTest {
 
         Page<Order> expectedPage = Page.empty(pageable);
 
-        when(orderRepository.findOrders(
-                999L, OrderStatus.CANCELLED, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        999L, OrderStatus.CANCELLED, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
         assertNotNull(result);
         assertTrue(result.isEmpty());
         assertEquals(0, result.getTotalElements());
 
-        verify(orderRepository, times(1))
-                .findOrders(999L, OrderStatus.CANCELLED, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
@@ -412,24 +422,26 @@ class OrderRepositoryTest {
         Page<Order> expectedPage =
                 new PageImpl<>(List.of(order1, order2), pageable, 5);
 
-        when(orderRepository.findOrders(
-                null, OrderStatus.CONFIRMED, pageable))
+        Specification<Order> specification =
+                (root, query, cb) -> cb.conjunction();
+
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(expectedPage);
 
         // Act
         Page<Order> result =
-                orderRepository.findOrders(
-                        null, OrderStatus.CONFIRMED, pageable);
+                orderRepository.findAll(specification, pageable);
 
         // Assert
+        assertNotNull(result);
         assertEquals(2, result.getContent().size());
         assertEquals(5, result.getTotalElements());
         assertEquals(3, result.getTotalPages());
         assertEquals(0, result.getNumber());
         assertEquals(2, result.getSize());
 
-        verify(orderRepository, times(1))
-                .findOrders(null, OrderStatus.CONFIRMED, pageable);
+        // Verify
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
 }

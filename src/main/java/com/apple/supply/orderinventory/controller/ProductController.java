@@ -16,6 +16,8 @@ import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
@@ -33,16 +35,32 @@ public class ProductController {
     }
 
     // Get all products with optional filters
+
     @GetMapping
     public Page<ProductResponse> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) Boolean active) {
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
 
         return productService.getAllProducts(
-                page, size, category, active);
+                page,
+                size,
+                name,
+                category,
+                brand,
+                color,
+                active,
+                minPrice,
+                maxPrice
+        );
     }
+
 
     // Get product details by id
     @GetMapping("/{productId}")

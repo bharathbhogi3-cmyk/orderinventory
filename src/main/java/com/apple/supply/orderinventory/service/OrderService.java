@@ -12,7 +12,9 @@ import com.apple.supply.orderinventory.repository.CustomerRepository;
 import com.apple.supply.orderinventory.repository.OrderItemRepository;
 import com.apple.supply.orderinventory.repository.OrderRepository;
 import com.apple.supply.orderinventory.repository.ProductRepository;
+import com.apple.supply.orderinventory.specification.OrderSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -179,12 +181,16 @@ public class OrderService {
                     "Customer not found with ID: " + customerId);
         }
 
-        // Tell Spring Data JPA which page to retrieve.
+        // Create pagination information.
         Pageable pageable = PageRequest.of(page, size);
 
-        // Retrieve the requested orders from the database.
-        Page<Order> orders = orderRepository.findOrders(
-                customerId, status, pageable);
+        // Build dynamic filtering conditions.
+        Specification<Order> specification =
+                OrderSpecification.withFilters(customerId, status);
+
+        // Retrieve orders using JPA Specifications.
+        Page<Order> orders =
+                orderRepository.findAll(specification, pageable);
 
         // Convert each Order entity into a summary DTO.
         Page<OrderSummaryResponse> summaries =
@@ -196,9 +202,11 @@ public class OrderService {
                         order.getStatus()
                 ));
 
-        log.info("Successfully retrieved {} orders", orders.getTotalElements());
+        log.info(
+                "Successfully retrieved {} orders",
+                orders.getTotalElements());
 
-        // Return the results and pagination information.
+        // Return results and pagination information.
         return new OrderPageResponse(
                 summaries.getContent(),
                 summaries.getNumber(),

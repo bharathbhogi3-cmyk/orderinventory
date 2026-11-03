@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -403,19 +405,20 @@ class ProductServiceTest {
         product.setQuantityAvailable(10);
         product.setActive(true);
 
-        org.springframework.data.domain.Pageable pageable =
-                org.springframework.data.domain.PageRequest.of(0, 10);
+        Pageable pageable = PageRequest.of(0, 10);
 
-        org.springframework.data.domain.Page<Product> productPage =
-                new org.springframework.data.domain.PageImpl<>(
-                        java.util.List.of(product), pageable, 1);
+        Page<Product> productPage =
+                new PageImpl<>(List.of(product), pageable, 1);
 
-        when(productRepository.findAll(pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(productPage);
 
         // Act
-        org.springframework.data.domain.Page<ProductResponse> response =
-                productService.getAllProducts(0, 10, null, null);
+        Page<ProductResponse> response =
+                productService.getAllProducts(
+                        0, 10, null, null, null, null,
+                        null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -423,7 +426,8 @@ class ProductServiceTest {
         assertEquals("iPhone 17", response.getContent().get(0).getName());
         assertEquals("IP17-BLA", response.getContent().get(0).getModel());
 
-        verify(productRepository, times(1)).findAll(pageable);
+        verify(productRepository, times(1))
+                .findAll(any(Specification.class), eq(pageable));
     }
 
 
@@ -445,14 +449,17 @@ class ProductServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Product> productPage =
-                new PageImpl<>(java.util.List.of(product), pageable, 1);
+                new PageImpl<>(List.of(product), pageable, 1);
 
-        when(productRepository.findByCategory("Laptop", pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(productPage);
 
         // Act
         Page<ProductResponse> response =
-                productService.getAllProducts(0, 10, "Laptop", null);
+                productService.getAllProducts(
+                        0, 10, null, "Laptop", null, null,
+                        null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -460,9 +467,7 @@ class ProductServiceTest {
         assertEquals("Laptop", response.getContent().get(0).getCategory());
 
         verify(productRepository, times(1))
-                .findByCategory("Laptop", pageable);
-
-        verify(productRepository, never()).findAll(pageable);
+                .findAll(any(Specification.class), eq(pageable));
     }
 
 
@@ -484,14 +489,17 @@ class ProductServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Product> productPage =
-                new PageImpl<>(java.util.List.of(product), pageable, 1);
+                new PageImpl<>(List.of(product), pageable, 1);
 
-        when(productRepository.findByActive(false, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(productPage);
 
         // Act
         Page<ProductResponse> response =
-                productService.getAllProducts(0, 10, null, false);
+                productService.getAllProducts(
+                        0, 10, null, null, null, null,
+                        false, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -499,9 +507,7 @@ class ProductServiceTest {
         assertFalse(response.getContent().get(0).isActive());
 
         verify(productRepository, times(1))
-                .findByActive(false, pageable);
-
-        verify(productRepository, never()).findAll(pageable);
+                .findAll(any(Specification.class), eq(pageable));
     }
 
 
@@ -523,15 +529,17 @@ class ProductServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Product> productPage =
-                new PageImpl<>(java.util.List.of(product), pageable, 1);
+                new PageImpl<>(List.of(product), pageable, 1);
 
-        when(productRepository.findByCategoryAndActive(
-                "Laptop", true, pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(productPage);
 
         // Act
         Page<ProductResponse> response =
-                productService.getAllProducts(0, 10, "Laptop", true);
+                productService.getAllProducts(
+                        0, 10, null, "Laptop", null, null,
+                        true, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -539,39 +547,35 @@ class ProductServiceTest {
         assertTrue(response.getContent().get(0).isActive());
 
         verify(productRepository, times(1))
-                .findByCategoryAndActive("Laptop", true, pageable);
-
-        verify(productRepository, never()).findAll(pageable);
+                .findAll(any(Specification.class), eq(pageable));
     }
 
 
     @Test
     void getAllProducts_shouldIgnoreBlankCategory() {
 
-        // Arrange
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Product> emptyPage =
-                new PageImpl<>(java.util.List.of(), pageable, 0);
+                new PageImpl<>(List.of(), pageable, 0);
 
-        when(productRepository.findAll(pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(emptyPage);
 
-        // Act: Category contains only spaces, and active is omitted
+        // Act
         Page<ProductResponse> response =
-                productService.getAllProducts(0, 10, "   ", null);
+                productService.getAllProducts(
+                        0, 10, null, "   ", null, null,
+                        null, null, null);
 
         // Assert
         assertNotNull(response);
         assertEquals(0, response.getTotalElements());
 
-        // Blank category should use the unfiltered repository method
-        verify(productRepository, times(1)).findAll(pageable);
-
-        verify(productRepository, never())
-                .findByCategory(anyString(), any(Pageable.class));
+        verify(productRepository, times(1))
+                .findAll(any(Specification.class), eq(pageable));
     }
-
 
     @Test
     void getAllProducts_shouldReturnPaginatedResults() {
@@ -603,17 +607,20 @@ class ProductServiceTest {
 
         Page<Product> productPage =
                 new PageImpl<>(
-                        java.util.List.of(product1, product2),
+                        List.of(product1, product2),
                         pageable,
                         3
                 );
 
-        when(productRepository.findAll(pageable))
+        when(productRepository.findAll(
+                any(Specification.class), eq(pageable)))
                 .thenReturn(productPage);
 
-        // Act: Request the first page, with two products per page
+        // Act
         Page<ProductResponse> response =
-                productService.getAllProducts(0, 2, null, null);
+                productService.getAllProducts(
+                        0, 2, null, null, null, null,
+                        null, null, null);
 
         // Assert
         assertEquals(3, response.getTotalElements());
@@ -621,9 +628,9 @@ class ProductServiceTest {
         assertEquals(2, response.getSize());
         assertEquals(0, response.getNumber());
 
-        verify(productRepository, times(1)).findAll(pageable);
+        verify(productRepository, times(1))
+                .findAll(any(Specification.class), eq(pageable));
     }
-
 
     @Test
     void deleteProduct_shouldThrowExceptionWhenProductHasOrderItems() {

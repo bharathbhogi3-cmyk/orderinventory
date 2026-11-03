@@ -12,7 +12,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import java.time.LocalDateTime;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.springframework.data.jpa.domain.Specification;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -768,16 +769,17 @@ class OrderServiceTest {
         order.setTotalAmount(new BigDecimal("159800.00"));
         order.setStatus(OrderStatus.DRAFT);
 
+        Pageable pageable = PageRequest.of(0, 10);
+
         Page<Order> orderPage = new PageImpl<>(
                 List.of(order),
-                PageRequest.of(0, 10),
+                pageable,
                 1
         );
 
-        when(orderRepository.findOrders(
-                isNull(),
-                isNull(),
-                any(Pageable.class)
+        when(orderRepository.findAll(
+                any(Specification.class),
+                eq(pageable)
         )).thenReturn(orderPage);
 
         // Act
@@ -792,7 +794,8 @@ class OrderServiceTest {
         assertEquals(
                 new BigDecimal("159800.00"),
                 result.getContent().get(0).getTotalAmount());
-        assertEquals(OrderStatus.DRAFT,
+        assertEquals(
+                OrderStatus.DRAFT,
                 result.getContent().get(0).getStatus());
 
         // Pagination assertions
@@ -804,14 +807,14 @@ class OrderServiceTest {
         assertTrue(result.isLast());
 
         // Verify
-        verify(orderRepository).findOrders(
-                isNull(),
-                isNull(),
-                any(Pageable.class)
+        verify(orderRepository).findAll(
+                any(Specification.class),
+                eq(pageable)
         );
 
         verifyNoInteractions(customerRepository);
     }
+
 
     @Test
     void getOrders_shouldFilterOrdersByCustomerId() {
@@ -827,19 +830,20 @@ class OrderServiceTest {
         order.setTotalAmount(new BigDecimal("159800.00"));
         order.setStatus(OrderStatus.DRAFT);
 
+        Pageable pageable = PageRequest.of(0, 10);
+
         Page<Order> orderPage = new PageImpl<>(
                 List.of(order),
-                PageRequest.of(0, 10),
+                pageable,
                 1
         );
 
         when(customerRepository.existsById(1L))
                 .thenReturn(true);
 
-        when(orderRepository.findOrders(
-                eq(1L),
-                isNull(),
-                any(Pageable.class)
+        when(orderRepository.findAll(
+                any(Specification.class),
+                eq(pageable)
         )).thenReturn(orderPage);
 
         // Act
@@ -855,10 +859,9 @@ class OrderServiceTest {
         // Verify
         verify(customerRepository).existsById(1L);
 
-        verify(orderRepository).findOrders(
-                eq(1L),
-                isNull(),
-                any(Pageable.class)
+        verify(orderRepository).findAll(
+                any(Specification.class),
+                eq(pageable)
         );
     }
 
@@ -876,16 +879,17 @@ class OrderServiceTest {
         order.setTotalAmount(new BigDecimal("159800.00"));
         order.setStatus(OrderStatus.CONFIRMED);
 
+        Pageable pageable = PageRequest.of(0, 10);
+
         Page<Order> orderPage = new PageImpl<>(
                 List.of(order),
-                PageRequest.of(0, 10),
+                pageable,
                 1
         );
 
-        when(orderRepository.findOrders(
-                isNull(),
-                eq(OrderStatus.CONFIRMED),
-                any(Pageable.class)
+        when(orderRepository.findAll(
+                any(Specification.class),
+                eq(pageable)
         )).thenReturn(orderPage);
 
         // Act
@@ -896,13 +900,16 @@ class OrderServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(101L, result.getContent().get(0).getId());
-        assertEquals(OrderStatus.CONFIRMED, result.getContent().get(0).getStatus());
+        assertEquals(
+                OrderStatus.CONFIRMED,
+                result.getContent().get(0).getStatus());
 
         // Verify
-        verify(orderRepository).findOrders(
-                isNull(),
-                eq(OrderStatus.CONFIRMED),
-                any(Pageable.class));
+        verify(orderRepository).findAll(
+                any(Specification.class),
+                eq(pageable)
+        );
+
         verifyNoInteractions(customerRepository);
     }
 
@@ -2990,7 +2997,7 @@ class OrderServiceTest {
         when(customerRepository.existsById(customerId))
                 .thenReturn(true);
 
-        when(orderRepository.findOrders(customerId, status, pageable))
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(orderPage);
 
         // Act
@@ -3003,7 +3010,7 @@ class OrderServiceTest {
 
         // Verify
         verify(customerRepository).existsById(customerId);
-        verify(orderRepository).findOrders(customerId, status, pageable);
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
     }
 
     @Test
@@ -3012,7 +3019,7 @@ class OrderServiceTest {
 
         Page<Order> emptyPage = new PageImpl<>(List.of());
 
-        when(orderRepository.findOrders(null, null, pageable))
+        when(orderRepository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(emptyPage);
 
         // Act
@@ -3025,7 +3032,7 @@ class OrderServiceTest {
         assertEquals(0, result.getContent().size());
 
         // Verify
-        verify(orderRepository).findOrders(null, null, pageable);
+        verify(orderRepository).findAll(any(Specification.class), eq(pageable));
         verifyNoInteractions(customerRepository);
     }
 
