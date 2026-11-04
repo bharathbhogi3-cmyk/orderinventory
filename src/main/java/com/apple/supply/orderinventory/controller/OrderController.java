@@ -42,9 +42,24 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) OrderStatus status) {
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "orderDateTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
 
-        return orderService.getOrders(page, size, customerId, status);
+        OrderPageResponse response = orderService.getOrders(
+                page,
+                size,
+                customerId,
+                status,
+                productName,
+                category,
+                sortBy,
+                direction
+        );
+
+        return response;
     }
 
     @GetMapping("/{orderId}")

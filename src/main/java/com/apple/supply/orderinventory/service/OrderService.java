@@ -29,6 +29,8 @@ import com.apple.supply.orderinventory.dto.OrderResponse;
 import com.apple.supply.orderinventory.dto.OrderItemResponse;
 import com.apple.supply.orderinventory.dto.UpdateOrderRequest;
 import com.apple.supply.orderinventory.dto.UpdateOrderItemRequest;
+import org.springframework.data.domain.Sort;
+import java.util.Set;
 
 import java.util.*;
 
@@ -156,11 +158,15 @@ public class OrderService {
             int page,
             int size,
             Long customerId,
-            OrderStatus status) {
+            OrderStatus status,
+            String productName,
+            String category,
+            String sortBy,
+            String direction) {
 
         log.info(
-                "Fetching orders. Page: {}, Size: {}, Customer ID: {}, Status: {}",
-                page, size, customerId, status);
+                "Fetching orders. Page: {}, Size: {}, Customer ID: {}, Status: {}, Product Name: {}, Category: {}, Sort By: {}, Direction: {}",
+                page, size, customerId, status, productName, category, sortBy, direction);
 
         // Validate pagination inputs.
         if (page < 0) {
@@ -173,6 +179,38 @@ public class OrderService {
                     "Page size must be between 1 and 100.");
         }
 
+        // Set default sorting values.
+        if (sortBy == null || sortBy.isBlank()) {
+            sortBy = "orderDateTime";
+        }
+
+        if (direction == null || direction.isBlank()) {
+            direction = "desc";
+        }
+
+// Allow only valid Order entity fields.
+        Set<String> allowedSortFields = Set.of(
+                "id",
+                "orderDateTime",
+                "totalAmount",
+                "status"
+        );
+
+        if (!allowedSortFields.contains(sortBy)) {
+            throw new IllegalArgumentException(
+                    "Invalid sort field: " + sortBy);
+        }
+
+// Validate sorting direction.
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "Invalid sort direction. Use 'asc' or 'desc'.");
+        }
+
         // Validate the customer before filtering orders.
         if (customerId != null
                 && !customerRepository.existsById(customerId)) {
@@ -182,11 +220,11 @@ public class OrderService {
         }
 
         // Create pagination information.
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         // Build dynamic filtering conditions.
         Specification<Order> specification =
-                OrderSpecification.withFilters(customerId, status);
+                OrderSpecification.withFilters(customerId, status, productName, category);
 
         // Retrieve orders using JPA Specifications.
         Page<Order> orders =

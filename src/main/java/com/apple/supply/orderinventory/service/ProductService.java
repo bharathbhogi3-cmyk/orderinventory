@@ -17,6 +17,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.apple.supply.orderinventory.dto.UpdateProductQuantityRequest;
+import org.springframework.data.domain.Sort;
+import java.util.Set;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -76,14 +78,66 @@ public class ProductService {
             String color,
             Boolean active,
             BigDecimal minPrice,
-            BigDecimal maxPrice) {
+            BigDecimal maxPrice,
+            String sortBy,
+            String direction) {
 
         log.info(
-                "Fetching products. Page: {}, Size: {}, Name: {}, Category: {}, Brand: {}, Color: {}, Active: {}, MinPrice: {}, MaxPrice: {}",
-                page, size, name, category, brand, color, active, minPrice, maxPrice
+                "Fetching products. Page: {}, Size: {}, Name: {}, Category: {}, Brand: {}, Color: {}, Active: {}, MinPrice: {}, MaxPrice: {}, SortBy: {}, Direction: {}",
+                page, size, name, category, brand, color, active,
+                minPrice, maxPrice, sortBy, direction
         );
 
-        Pageable pageable = PageRequest.of(page, size);
+        // Allowed fields for sorting.
+        Set<String> allowedSortFields = Set.of(
+                "id",
+                "name",
+                "category",
+                "unitPrice",
+                "createdAt"
+        );
+
+        // Apply default sorting values.
+        if (sortBy == null || sortBy.isBlank()) {
+            sortBy = "createdAt";
+        }
+
+        if (direction == null || direction.isBlank()) {
+            direction = "desc";
+        }
+
+        // Validate sorting field.
+        if (!allowedSortFields.contains(sortBy)) {
+            throw new IllegalArgumentException(
+                    "Invalid sort field: " + sortBy);
+        }
+
+        // Validate sorting direction.
+        Sort.Direction sortDirection;
+
+        try {
+            sortDirection = Sort.Direction.fromString(direction);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "Invalid sort direction. Use 'asc' or 'desc'.");
+        }
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                    "Page number cannot be negative.");
+        }
+
+        if (size < 1 || size > 100) {
+            throw new IllegalArgumentException(
+                    "Page size must be between 1 and 100.");
+        }
+
+        // Create pagination with sorting.
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(sortDirection, sortBy)
+        );
 
         Specification<Product> specification =
                 ProductSpecification.withFilters(

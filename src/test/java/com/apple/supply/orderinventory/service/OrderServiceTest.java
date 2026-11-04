@@ -784,7 +784,7 @@ class OrderServiceTest {
 
         // Act
         OrderPageResponse result =
-                orderService.getOrders(0, 10, null, null);
+                orderService.getOrders(0, 10, null, null, null, null, null, null);
 
         // Assert
         assertNotNull(result);
@@ -848,7 +848,7 @@ class OrderServiceTest {
 
         // Act
         OrderPageResponse result =
-                orderService.getOrders(0, 10, 1L, null);
+                orderService.getOrders(0, 10, 1L, null, null, null, null, null);
 
         // Assert
         assertNotNull(result);
@@ -894,7 +894,7 @@ class OrderServiceTest {
 
         // Act
         OrderPageResponse result =
-                orderService.getOrders(0, 10, null, OrderStatus.CONFIRMED);
+                orderService.getOrders(0, 10, null, OrderStatus.CONFIRMED, null, null, null, null);
 
         // Assert
         assertNotNull(result);
@@ -920,7 +920,7 @@ class OrderServiceTest {
         when(customerRepository.existsById(999L)).thenReturn(false);
 
         // Act & Assert
-        assertThrows(CustomerNotFoundException.class, () -> orderService.getOrders(0, 10, 999L, null));
+        assertThrows(CustomerNotFoundException.class, () -> orderService.getOrders(0, 10, 999L, null, null, null, null, null));
 
         // Verify
         verify(customerRepository).existsById(999L);
@@ -931,7 +931,7 @@ class OrderServiceTest {
     void getOrders_shouldThrowExceptionWhenPageIsNegative() {
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> orderService.getOrders(-1, 10, null, null));
+        assertThrows(IllegalArgumentException.class, () -> orderService.getOrders(-1, 10, null, null, null, null, null, null));
 
         // Verify
         verifyNoInteractions(orderRepository, customerRepository);
@@ -941,7 +941,7 @@ class OrderServiceTest {
     void getOrders_shouldThrowExceptionWhenPageSizeExceeds100() {
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> orderService.getOrders(0, 101, null, null));
+        assertThrows(IllegalArgumentException.class, () -> orderService.getOrders(0, 101, null, null, null, null, null, null));
 
         // Verify
         verifyNoInteractions(orderRepository, customerRepository);
@@ -2989,6 +2989,10 @@ class OrderServiceTest {
     void getOrders_shouldFilterOrdersByCustomerIdAndStatus() {
         Long customerId = 1L;
         OrderStatus status = OrderStatus.DRAFT;
+        String productName = "";
+        String category = "";
+        String sortBy = "";
+        String direction = "";
 
         Pageable pageable = PageRequest.of(0, 10);
 
@@ -3002,7 +3006,7 @@ class OrderServiceTest {
 
         // Act
         OrderPageResponse result =
-                orderService.getOrders(0, 10, customerId, status);
+                orderService.getOrders(0, 10, customerId, status, productName, category, sortBy, direction);
 
         // Assert
         assertNotNull(result);
@@ -3024,7 +3028,7 @@ class OrderServiceTest {
 
         // Act
         OrderPageResponse result =
-                orderService.getOrders(0, 10, null, null);
+                orderService.getOrders(0, 10, null, null, null, null, null, null);
 
         // Assert
         assertNotNull(result);

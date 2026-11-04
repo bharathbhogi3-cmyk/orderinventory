@@ -46,7 +46,9 @@ public class ProductController {
             @RequestParam(required = false) String color,
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice) {
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
 
         return productService.getAllProducts(
                 page,
@@ -57,7 +59,9 @@ public class ProductController {
                 color,
                 active,
                 minPrice,
-                maxPrice
+                maxPrice,
+                sortBy,
+                direction
         );
     }
 
