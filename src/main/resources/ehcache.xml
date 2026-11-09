@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<config
+        xmlns="http://www.ehcache.org/v3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+        http://www.ehcache.org/v3
+        http://www.ehcache.org/schema/ehcache-core.xsd">
+
+    <!-- Cache for individual products -->
+    <cache alias="productsById">
+
+        <key-type>java.lang.Long</key-type>
+        <value-type>java.lang.Object</value-type>
+
+        <expiry>
+            <ttl unit="minutes">10</ttl>
+        </expiry>
+
+        <resources>
+            <heap unit="entries">1000</heap>
+        </resources>
+
+    </cache>
+
+    <!-- Cache for product listings -->
+    <cache alias="products">
+
+        <key-type>java.lang.Object</key-type>
+        <value-type>java.lang.Object</value-type>
+
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+
+        <resources>
+            <heap unit="entries">500</heap>
+        </resources>
+
+    </cache>
+
+    <!-- Cache for category-based product searches -->
+    <cache alias="productsByCategory">
+
+        <key-type>java.lang.Object</key-type>
+        <value-type>java.lang.Object</value-type>
+
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+
+        <resources>
+            <heap unit="entries">500</heap>
+        </resources>
+
+    </cache>
+
+    <!-- Cache for individual orders -->
+    <cache alias="ordersById">
+        <key-type>java.lang.Long</key-type>
+        <value-type>java.lang.Object</value-type>
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">500</heap>
+        </resources>
+    </cache>
+
+    <cache alias="orders">
+        <key-type>java.lang.String</key-type>
+        <value-type>java.lang.Object</value-type>
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">500</heap>
+        </resources>
+    </cache>
+
+    <cache alias="orderItems">
+        <key-type>java.lang.String</key-type>
+        <value-type>java.lang.Object</value-type>
+        <expiry>
+            <ttl unit="minutes">5</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">500</heap>
+        </resources>
+    </cache>
+
+</config>

@@ -10,6 +10,9 @@ import com.apple.supply.orderinventory.model.Product;
 import com.apple.supply.orderinventory.repository.ProductRepository;
 import com.apple.supply.orderinventory.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +36,10 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Transactional
+    @CacheEvict(
+            cacheNames = {"products", "productsByCategory"},
+            allEntries = true
+    )
     public ProductResponse createProduct(CreateProductRequest request) {
 
         log.info("Creating product with name: {}", request.getName());
@@ -69,6 +76,10 @@ public class ProductService {
 
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            cacheNames = "products",
+            key = "#p0 + '_' + #p1 + '_' + #p2 + '_' + #p3 + '_' + #p4 + '_' + #p5 + '_' + #p6 + '_' + #p7 + '_' + #p8 + '_' + #p9 + '_' + #p10"
+    )
     public Page<ProductResponse> getAllProducts(
             int page,
             int size,
@@ -163,6 +174,7 @@ public class ProductService {
 
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "productsById", key = "#p0")
     public ProductResponse getProductById(Long productId) {
 
         log.info("Fetching product with ID: {}", productId);
@@ -179,6 +191,16 @@ public class ProductService {
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(
+                    cacheNames = "productsById",
+                    key = "#p0"
+            ),
+            @CacheEvict(
+                    cacheNames = {"products", "productsByCategory"},
+                    allEntries = true
+            )
+    })
     public ProductResponse updateProduct(
             Long productId,
             UpdateProductRequest request) {
@@ -292,6 +314,16 @@ public class ProductService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(
+                    cacheNames = "productsById",
+                    key = "#p0"
+            ),
+            @CacheEvict(
+                    cacheNames = {"products", "productsByCategory"},
+                    allEntries = true
+            )
+    })
     public void deleteProduct(Long productId) {
 
         log.info("Deleting product with ID: {}", productId);
@@ -317,6 +349,16 @@ public class ProductService {
 
     // Updates the Quantity of the product(Replaces the current Quantity)
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(
+                    cacheNames = "productsById",
+                    key = "#p0"
+            ),
+            @CacheEvict(
+                    cacheNames = {"products", "productsByCategory"},
+                    allEntries = true
+            )
+    })
     public ProductResponse updateProductQuantity(
             Long productId,
             UpdateProductQuantityRequest request) {

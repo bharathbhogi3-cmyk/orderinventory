@@ -418,7 +418,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 10, null, null, null, null,
-                        null, null, null);
+                        null, null, null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -459,7 +459,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 10, null, "Laptop", null, null,
-                        null, null, null);
+                        null, null, null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -499,7 +499,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 10, null, null, null, null,
-                        false, null, null);
+                        false, null, null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -539,7 +539,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 10, null, "Laptop", null, null,
-                        true, null, null);
+                        true, null, null, null, null);
 
         // Assert
         assertEquals(1, response.getTotalElements());
@@ -567,7 +567,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 10, null, "   ", null, null,
-                        null, null, null);
+                        null, null, null, null, null);
 
         // Assert
         assertNotNull(response);
@@ -620,7 +620,7 @@ class ProductServiceTest {
         Page<ProductResponse> response =
                 productService.getAllProducts(
                         0, 2, null, null, null, null,
-                        null, null, null);
+                        null, null, null, null, null);
 
         // Assert
         assertEquals(3, response.getTotalElements());

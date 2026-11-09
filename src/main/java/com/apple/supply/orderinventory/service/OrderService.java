@@ -14,6 +14,9 @@ import com.apple.supply.orderinventory.repository.OrderRepository;
 import com.apple.supply.orderinventory.repository.ProductRepository;
 import com.apple.supply.orderinventory.specification.OrderSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,9 @@ import com.apple.supply.orderinventory.dto.UpdateOrderRequest;
 import com.apple.supply.orderinventory.dto.UpdateOrderItemRequest;
 import org.springframework.data.domain.Sort;
 import java.util.Set;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
@@ -43,6 +49,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final OrderItemRepository orderItemRepository;
+    private final CacheManager cacheManager;
 
     @Transactional
     public Order createDraftOrder(CreateOrderRequest request) {
@@ -144,6 +151,9 @@ public class OrderService {
         // 6. Save the order and its items.
         Order savedOrder = orderRepository.save(order);
 
+        // 7. Clear the orders listing cache after successful transaction commit.
+        evictOrderListingCacheAfterCommit();
+
         log.info(
                 "Draft order created successfully. Order ID: {}, Customer ID: {}",
                 savedOrder.getId(),
@@ -154,6 +164,10 @@ public class OrderService {
 
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "orders",
+            key = "#p0 + '_' + #p1 + '_' + #p2 + '_' + #p3 + '_' + #p4 + '_' + #p5 + '_' + #p6 + '_' + #p7"
+    )
     public OrderPageResponse getOrders(
             int page,
             int size,
@@ -257,6 +271,7 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "ordersById", key = "#p0")
     public OrderResponse getOrderById(Long orderId) {
 
         log.info("Fetching order details for order ID: {}", orderId);
@@ -365,6 +380,11 @@ public class OrderService {
                 productRepository.save(product);
             }
 
+            // Invalidate product caches after successful transaction commit.
+            evictProductCachesAfterCommit(
+                    requiredQuantities.keySet()
+            );
+
             // Step 5: Update the order status.
             order.setStatus(OrderStatus.CONFIRMED);
 
@@ -387,21 +407,29 @@ public class OrderService {
                             b.getProduct().getId()))
                     .toList();
 
+            Set<Long> restoredProductIds = new HashSet<>();
+
             for (OrderItem item : items) {
+
+                Long productId = item.getProduct().getId();
+
                 Product product = productRepository
-                        .findByIdForUpdate(item.getProduct().getId())
+                        .findByIdForUpdate(productId)
                         .orElseThrow(() -> new ProductNotFoundException(
-                                "Product not found: "
-                                        + item.getProduct().getId()));
+                                "Product not found: " + productId));
 
                 product.setQuantityAvailable(
                         product.getQuantityAvailable() + item.getQuantity());
 
                 productRepository.save(product);
+
+                restoredProductIds.add(productId);
             }
 
-            order.setStatus(OrderStatus.CANCELLED);
+            // Invalidate product caches after successful transaction commit.
+            evictProductCachesAfterCommit(restoredProductIds);
 
+            order.setStatus(OrderStatus.CANCELLED);
         } else {
             throw new BusinessConflictException(
                     "Cannot change order status from "
@@ -448,12 +476,18 @@ public class OrderService {
         // 7. Recalculate the order total.
         recalculateOrderTotal(order);
 
+        // 8. Invalidate order cache after successful transaction commit.
+        evictOrderCacheAfterCommit(orderId);
+
         log.info("Order item deleted successfully. Item ID: {}, Order ID: {}",
                 orderItemId, orderId);
     }
 
 
-
+    @Cacheable(
+            value = "orderItems",
+            key = "'order_' + #p0 + '_items'"
+    )
     @Transactional(readOnly = true)
     public List<OrderItemResponse> getOrderItems(Long orderId) {
 
@@ -467,6 +501,10 @@ public class OrderService {
     }
 
 
+    @Cacheable(
+            value = "orderItems",
+            key = "'order_' + #p0 + '_item_' + #p1"
+    )
     @Transactional(readOnly = true)
     public OrderItemResponse getOrderItemById(
             Long orderId,
@@ -488,6 +526,10 @@ public class OrderService {
     }
 
 
+    @Cacheable(
+            value = "orderItems",
+            key = "'item_' + #p0"
+    )
     @Transactional(readOnly = true)
     public OrderItemResponse getOrderItemById(Long orderItemId) {
 
@@ -704,6 +746,9 @@ public class OrderService {
         // 9. Save and return the updated order.
         Order savedOrder = orderRepository.save(order);
 
+        // Invalidate order cache after successful transaction commit.
+        evictOrderCacheAfterCommit(orderId);
+
         var items = savedOrder.getOrderItems().stream()
                 .map(this::toOrderItemResponse)
                 .toList();
@@ -757,5 +802,123 @@ public class OrderService {
                 .orElseThrow(() -> new OrderItemNotFoundException(
                         "Order item " + orderItemId
                                 + " not found in order " + order.getId()));
+    }
+
+    private void evictProductCachesAfterCommit(Set<Long> productIds) {
+
+        if (productIds == null || productIds.isEmpty()) {
+            return;
+        }
+
+        Set<Long> ids = Set.copyOf(productIds);
+
+        Runnable evictionTask = () -> {
+
+            // Evict individual product entries.
+            Cache productCache = cacheManager.getCache("productsById");
+
+            if (productCache != null) {
+                ids.forEach(productCache::evict);
+            }
+
+            // Evict all product listing entries.
+            String[] listingCaches = {
+                    "products",
+                    "productsByCategory"
+            };
+
+            for (String cacheName : listingCaches) {
+
+                Cache cache = cacheManager.getCache(cacheName);
+
+                if (cache != null) {
+                    cache.clear();
+                }
+            }
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+
+                        @Override
+                        public void afterCommit() {
+                            evictionTask.run();
+                        }
+                    }
+            );
+
+        } else {
+            evictionTask.run();
+        }
+    }
+
+    private void evictOrderCacheAfterCommit(Long orderId) {
+
+        Runnable evictionTask = () -> {
+
+            // Evict the individual order cache.
+            Cache orderCache = cacheManager.getCache("ordersById");
+
+            if (orderCache != null) {
+                orderCache.evict(orderId);
+            }
+
+            // Clear the paginated orders listing cache.
+            Cache ordersCache = cacheManager.getCache("orders");
+
+            if (ordersCache != null) {
+                ordersCache.clear();
+            }
+
+            // Clear all cached order-item responses.
+            Cache orderItemsCache = cacheManager.getCache("orderItems");
+
+            if (orderItemsCache != null) {
+                orderItemsCache.clear();
+            }
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            evictionTask.run();
+                        }
+                    }
+            );
+
+        } else {
+            evictionTask.run();
+        }
+    }
+
+    private void evictOrderListingCacheAfterCommit() {
+
+        Runnable evictionTask = () -> {
+            Cache ordersCache = cacheManager.getCache("orders");
+
+            if (ordersCache != null) {
+                ordersCache.clear();
+            }
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            evictionTask.run();
+                        }
+                    }
+            );
+
+        } else {
+            evictionTask.run();
+        }
     }
 }
